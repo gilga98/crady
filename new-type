@@ -1,0 +1,1761 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Nidra Minimalist Rocker Crib (48" × 24" × 4") — 3D Blueprint</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Three.js r128 -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100dvh;
+      overflow: hidden;
+      font-family: 'Inter', sans-serif;
+      background: radial-gradient(circle at 50% 42%, #ffffff 0%, #f5f3ee 65%, #e8e5dd 100%);
+      color: #1c1917;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    #canvas-container {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    #canvas-container canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      touch-action: none;
+      cursor: grab;
+    }
+    #canvas-container canvas:active {
+      cursor: grabbing;
+    }
+
+    /* Sleek Google-style range slider */
+    input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      background: rgba(120, 113, 108, 0.22);
+      height: 6px;
+      border-radius: 999px;
+      outline: none;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: #b45309;
+      cursor: pointer;
+      border: 3px solid #ffffff;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+    }
+    input[type="range"]::-moz-range-thumb {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: #b45309;
+      cursor: pointer;
+      border: 3px solid #ffffff;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+    }
+
+    /* Bottom sheet smooth transition */
+    #guide-sheet {
+      transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .sheet-closed {
+      transform: translateY(105%);
+      pointer-events: none;
+    }
+    .sheet-open {
+      transform: translateY(0%);
+      pointer-events: auto;
+    }
+
+    @media print {
+      #canvas-container, #floating-top, #floating-bottom, #part-toast {
+        display: none !important;
+      }
+      html, body {
+        height: auto;
+        overflow: visible;
+        background: #ffffff;
+      }
+      #guide-sheet {
+        position: static !important;
+        transform: none !important;
+        max-height: none !important;
+        box-shadow: none !important;
+        border: none !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- FULL-SCREEN 3D VIEWPORT (Google 3D Animals Style) -->
+  <div id="canvas-container"></div>
+
+  <!-- MINIMAL FLOATING TOP BAR -->
+  <div id="floating-top" class="fixed top-3 left-3 right-3 z-20 flex flex-col gap-2 pointer-events-none">
+    <div class="flex items-center justify-between gap-2">
+      <div class="pointer-events-auto bg-white/82 backdrop-blur-md border border-stone-200/80 rounded-full px-3.5 py-2 shadow-sm flex items-center gap-2">
+        <span class="w-2.5 h-2.5 rounded-full bg-amber-600"></span>
+        <span class="text-xs sm:text-sm font-bold text-stone-800 tracking-tight">Nidra Minimal Crib</span>
+        <span class="text-[11px] font-semibold text-stone-500 hidden xs:inline">48"×24"×4"</span>
+      </div>
+
+      <div class="pointer-events-auto flex items-center gap-1.5">
+        <button onclick="resetCamera()" title="Reset View" class="bg-white/82 backdrop-blur-md border border-stone-200/80 rounded-full w-9 h-9 flex items-center justify-center text-stone-700 shadow-sm active:scale-95 transition">
+          ↺
+        </button>
+        <button onclick="openGuide('cutlist')" class="bg-stone-900/90 backdrop-blur-md text-white rounded-full px-3.5 py-2 text-xs font-semibold shadow-sm active:scale-95 transition flex items-center gap-1.5">
+          <span>📋</span>
+          <span>Carpenter Guide</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Option 1 vs Option 2 Switcher Pill -->
+    <div class="flex justify-center">
+      <div class="pointer-events-auto inline-flex bg-white/86 backdrop-blur-md border border-stone-200/90 rounded-full p-1 shadow-sm gap-1">
+        <button id="opt-btn-1" onclick="setDesignOption(1)" class="px-3 py-1 rounded-full text-[11px] font-bold text-stone-600 transition">
+          Option 1: Bolt-On Rockers
+        </button>
+        <button id="opt-btn-2" onclick="setDesignOption(2)" class="px-3 py-1 rounded-full text-[11px] font-bold bg-stone-900 text-white shadow-xs transition">
+          Option 2: Horizontal Glider
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- COMPACT TAP-TO-INSPECT TOAST (Never blocks the model) -->
+  <div id="part-toast" class="fixed top-24 left-3 right-3 z-20 flex justify-center pointer-events-none opacity-0 transition-opacity duration-200">
+    <div class="pointer-events-auto max-w-sm w-full bg-white/92 backdrop-blur-md border border-amber-300 rounded-2xl px-3.5 py-2.5 shadow-md flex items-start justify-between gap-2">
+      <div class="min-w-0">
+        <div class="flex items-center gap-1.5">
+          <span id="toast-code" class="text-[10px] font-extrabold bg-amber-100 text-amber-900 px-1.5 py-0.5 rounded-md"></span>
+          <span id="toast-dims" class="text-[11px] font-mono font-bold text-stone-700"></span>
+        </div>
+        <p id="toast-name" class="text-xs font-extrabold text-stone-900 mt-0.5 truncate"></p>
+        <p id="toast-note" class="text-[11px] text-stone-600 leading-snug mt-0.5"></p>
+      </div>
+      <button onclick="dismissToast()" class="w-6 h-6 rounded-full bg-stone-100 text-stone-500 text-xs font-bold shrink-0 flex items-center justify-center">✕</button>
+    </div>
+  </div>
+
+  <!-- MINIMAL FLOATING BOTTOM CONTROLS -->
+  <div id="floating-bottom" class="fixed bottom-3 left-3 right-3 z-20 flex justify-center pointer-events-none">
+    <div class="pointer-events-auto w-full max-w-md bg-white/84 backdrop-blur-lg border border-stone-200/90 rounded-3xl p-3 shadow-lg space-y-2.5">
+
+      <!-- Assembly / Disassembly Slider -->
+      <div class="px-1">
+        <div class="flex items-center justify-between text-[11px] font-bold text-stone-600 mb-1.5">
+          <span>Assembled</span>
+          <span id="explode-label" class="text-amber-800">Slide to Inspect Joints (0%)</span>
+          <span>Exploded</span>
+        </div>
+        <input id="explode-slider" type="range" min="0" max="100" value="0" class="w-full" oninput="setExplode(this.value)" />
+      </div>
+
+      <!-- 4 Compact Action Pills -->
+      <div class="grid grid-cols-4 gap-1.5">
+        <button id="btn-rock" onclick="toggleMotion()" class="py-2 px-1.5 rounded-2xl bg-amber-600 text-white text-[11px] font-bold flex flex-col items-center justify-center gap-0.5 shadow-sm active:scale-95 transition">
+          <span id="icon-rock" class="text-sm leading-none">↔️</span>
+          <span id="txt-rock">Glide ON</span>
+        </button>
+
+        <button id="btn-stage" onclick="cycleStage()" class="py-2 px-1.5 rounded-2xl bg-stone-100 text-stone-800 text-[11px] font-bold flex flex-col items-center justify-center gap-0.5 active:scale-95 transition">
+          <span class="text-sm leading-none">👶</span>
+          <span id="txt-stage">2–5m High</span>
+        </button>
+
+        <button id="btn-xray" onclick="toggleXray()" class="py-2 px-1.5 rounded-2xl bg-stone-100 text-stone-800 text-[11px] font-bold flex flex-col items-center justify-center gap-0.5 active:scale-95 transition">
+          <span class="text-sm leading-none">🔩</span>
+          <span>Joints</span>
+        </button>
+
+        <button id="btn-dims" onclick="toggleDims()" class="py-2 px-1.5 rounded-2xl bg-amber-50 border border-amber-300 text-amber-900 text-[11px] font-bold flex flex-col items-center justify-center gap-0.5 active:scale-95 transition">
+          <span class="text-sm leading-none">📏</span>
+          <span>Sizes</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE-UP CARPENTER GUIDE BOTTOM SHEET -->
+  <div id="guide-backdrop" onclick="closeGuide()" class="fixed inset-0 bg-stone-950/40 backdrop-blur-xs z-30 hidden"></div>
+  <div id="guide-sheet" class="sheet-closed fixed inset-x-0 bottom-0 z-40 bg-white rounded-t-3xl shadow-2xl max-h-[86dvh] flex flex-col max-w-3xl mx-auto border-t border-stone-200">
+    <!-- Sheet Header -->
+    <div class="p-4 border-b border-stone-200 flex items-center justify-between gap-2 shrink-0">
+      <div>
+        <h2 id="guide-title" class="text-base font-extrabold text-stone-900">Option 2: Horizontal Glider Crib — Blueprint</h2>
+        <p id="guide-subtitle" class="text-[11px] text-stone-500">48" × 24" × 4" Mattress • 4 Steel Flat-Bar Links + Lock Pin • Inches &amp; Feet</p>
+      </div>
+      <button onclick="closeGuide()" class="w-9 h-9 rounded-full bg-stone-100 text-stone-700 font-bold flex items-center justify-center hover:bg-stone-200">
+        ✕
+      </button>
+    </div>
+
+    <!-- Sheet Tabs -->
+    <div class="px-4 pt-3 flex gap-1.5 shrink-0">
+      <button id="stab-cutlist" onclick="switchGuideTab('cutlist')" class="flex-1 py-2 rounded-xl text-xs font-bold bg-stone-900 text-white transition">
+        Cut List (Inches)
+      </button>
+      <button id="stab-ikea" onclick="switchGuideTab('ikea')" class="flex-1 py-2 rounded-xl text-xs font-bold bg-stone-100 text-stone-700 transition">
+        Visual Joints
+      </button>
+      <button id="stab-safety" onclick="switchGuideTab('safety')" class="flex-1 py-2 rounded-xl text-xs font-bold bg-stone-100 text-stone-700 transition">
+        Safety Check
+      </button>
+    </div>
+
+    <!-- Scrollable Sheet Content -->
+    <div class="p-4 overflow-y-auto space-y-5 flex-1">
+
+      <!-- SUB-TAB 1: CUT LIST (INCHES & FEET) -->
+      <div id="gview-cutlist" class="space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-2 bg-amber-50 border border-amber-200 rounded-2xl p-3">
+          <p id="cutlist-summary" class="text-xs text-amber-950">
+            <strong>Mattress Size:</strong> 4 ft × 2 ft × 4" (48" × 24" × 4")<br/>
+            <strong>Outer Footprint (Glider Base):</strong> 4 ft 8" L × 2 ft 7" W × 3 ft H
+          </p>
+          <button onclick="copyCutList()" class="px-3 py-2 bg-amber-700 text-white rounded-xl text-xs font-bold active:scale-95 transition">
+            📋 Copy for WhatsApp
+          </button>
+        </div>
+
+        <div id="copy-toast" class="hidden p-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold text-center">
+          ✅ Copied! Paste directly into WhatsApp for your carpenter.
+        </div>
+
+        <div class="overflow-x-auto border border-stone-200 rounded-2xl">
+          <table class="w-full text-left border-collapse text-xs">
+            <thead>
+              <tr class="bg-stone-100 text-stone-700 border-b border-stone-200">
+                <th class="p-2.5 font-bold">Part</th>
+                <th class="p-2.5 font-bold">Qty</th>
+                <th class="p-2.5 font-bold">Finished Size (Inches)</th>
+                <th class="p-2.5 font-bold">Carpenter Note</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-stone-200">
+              <tr class="opt1-row hidden bg-amber-50/40">
+                <td class="p-2.5 font-bold">R. Bolt-On Rocker Arc</td>
+                <td class="p-2.5 font-bold">2</td>
+                <td class="p-2.5 font-mono font-bold">32" × 2.5" × 1.75"</td>
+                <td class="p-2.5 text-stone-600">Gentle curve (88" radius) + flat stop-ends. Bolts under legs with 4× M8 bolts. Remove at 5–6m!</td>
+              </tr>
+              <tr class="opt2-row bg-amber-50/40">
+                <td class="p-2.5 font-bold">G1. Glider Base Side Runners</td>
+                <td class="p-2.5 font-bold">2</td>
+                <td class="p-2.5 font-mono font-bold">31" × 2" × 1.5"</td>
+                <td class="p-2.5 text-stone-600">Stationary floor feet (left &amp; right ends) with rubber pads underneath.</td>
+              </tr>
+              <tr class="opt2-row bg-amber-50/40">
+                <td class="p-2.5 font-bold">G2. Glider Risers &amp; Tie-Bars</td>
+                <td class="p-2.5 font-bold">4 + 2</td>
+                <td class="p-2.5 font-mono font-bold">6"×1.5"×1.5" &amp; 27.5"×1.5"×1.5"</td>
+                <td class="p-2.5 text-stone-600">Low 8" side frames that hold the upper pivot bolts + center safety lock pin.</td>
+              </tr>
+              <tr class="opt2-row bg-amber-50/40">
+                <td class="p-2.5 font-bold">G3. Floor Stretcher Beams</td>
+                <td class="p-2.5 font-bold">2</td>
+                <td class="p-2.5 font-mono font-bold">52.9" × 1.75" × 1.25"</td>
+                <td class="p-2.5 text-stone-600">Connects left &amp; right glider base frames at floor level (keeps base 100% square).</td>
+              </tr>
+              <tr class="opt2-row bg-amber-50/40">
+                <td class="p-2.5 font-bold">G4. Steel Flat-Bar Links</td>
+                <td class="p-2.5 font-bold">4</td>
+                <td class="p-2.5 font-mono font-bold">5.7" × 1.1" × 5mm Patti</td>
+                <td class="p-2.5 text-stone-600">Mild steel / SS flat bar with 2× 8.5mm holes spaced <strong>exactly 4.5" center-to-center</strong>.</td>
+              </tr>
+              <tr>
+                <td class="p-2.5 font-bold">A. Corner Legs</td>
+                <td class="p-2.5 font-bold">4</td>
+                <td class="p-2.5 font-mono font-bold">34.5" × 1.75" × 1.75"</td>
+                <td class="p-2.5 text-stone-600">Softly round all edges &amp; top caps. Brass inserts at 6.5", 12.5", 18.5" H + 1 in leg bottom.</td>
+              </tr>
+              <tr>
+                <td class="p-2.5 font-bold">B. Long Side Rails</td>
+                <td class="p-2.5 font-bold">4</td>
+                <td class="p-2.5 font-mono font-bold">48.25" × 1.75" × 1.25"</td>
+                <td class="p-2.5 text-stone-600">Round top edges smoothly. Bolts to Legs (A) with M6 Allen bolts + barrel nuts + wood dowels.</td>
+              </tr>
+              <tr>
+                <td class="p-2.5 font-bold">C. Short End Rails</td>
+                <td class="p-2.5 font-bold">4</td>
+                <td class="p-2.5 font-mono font-bold">24.25" × 1.75" × 1.25"</td>
+                <td class="p-2.5 text-stone-600">Glued tenon/dowel joint into Corner Legs (A) to form rigid left &amp; right end frames.</td>
+              </tr>
+              <tr>
+                <td class="p-2.5 font-bold">D. Round Dowel Spindles</td>
+                <td class="p-2.5 font-bold">52</td>
+                <td class="p-2.5 font-mono font-bold">27" × 0.75" Dia (19mm)</td>
+                <td class="p-2.5 text-stone-600"><strong>STRICT &lt;2" GAP!</strong> 17 per long side (1.97" gap), 9 per short end (1.75" gap). Glue 0.5" deep.</td>
+              </tr>
+              <tr>
+                <td class="p-2.5 font-bold">E. Mattress Base Frame</td>
+                <td class="p-2.5 font-bold">1 set</td>
+                <td class="p-2.5 font-mono font-bold">48" × 24" (10 slats)</td>
+                <td class="p-2.5 text-stone-600">10 slats (2" wide) screwed to inner ledger strips. 4 steel L-brackets bolt to legs.</td>
+              </tr>
+              <tr>
+                <td class="p-2.5 font-bold">F. Toddler / Co-Sleeper Bar</td>
+                <td class="p-2.5 font-bold">1</td>
+                <td class="p-2.5 font-mono font-bold">48.25" × 1.75" × 1.25"</td>
+                <td class="p-2.5 text-stone-600">Replaces front panel after 18m (or for co-sleeper mode when rockers are removed).</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="bg-stone-50 rounded-2xl border border-stone-200 p-3.5 text-xs space-y-2">
+          <h3 class="font-bold text-stone-900">🔩 Simple Hardware (Zero Bearings, Available Anywhere in India)</h3>
+          <ul class="space-y-1 text-stone-700 list-disc pl-4">
+            <li><strong>Wood:</strong> Seasoned Teak (Sagwan), German Beech, or Rubberwood. <strong>NO Plywood/MDF.</strong></li>
+            <li><strong>Finish:</strong> Raw Beeswax + Mineral Oil OR Water-based Zero-VOC Matte (NO PU/Melamine).</li>
+            <li class="opt1-row hidden"><strong>Rocker Attachment (Option 1):</strong> 4× <strong>M8×75mm SS Allen Bolts</strong> + Fender Washers + 4× M8 Brass Threaded Inserts (in leg bottoms).</li>
+            <li class="opt2-row"><strong>Glider Linkage (Option 2):</strong> 4× <strong>5mm Steel Flat-Bar Patti</strong> (4.5" hole-to-hole) + 8× <strong>M8×65mm Bolts</strong> + 16× Nylon Spacer Washers + 8× Nyloc Locknuts.</li>
+            <li class="opt2-row"><strong>Glider Safety Lock (Option 2):</strong> 2× <strong>10mm Sliding Steel Lock Pins</strong> (or M8 Knurled Lock Bolts) with flanged bushings at center of each end.</li>
+            <li><strong>Knockdown Side Rails:</strong> 8× <strong>M6×75mm SS Allen Bolts</strong> + Brass Barrel Nuts + 8× 10mm Fluted Wood Dowels.</li>
+            <li><strong>Movable Mattress Base:</strong> 4× <strong>Heavy Steel L-Brackets</strong> + 4× M6×35mm Allen Bolts + 12× M6 Brass Inserts (3 heights × 4 legs).</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- SUB-TAB 2: IKEA-STYLE VISUAL DIAGRAMS -->
+      <div id="gview-ikea" class="hidden space-y-4">
+        <!-- Diagram 1A: Option 1 Rocker Arc -->
+        <div class="opt1-row hidden border-2 border-stone-200 rounded-2xl p-3.5">
+          <h3 class="text-xs font-extrabold text-stone-900 mb-2">1. Option 1: Detachable Anti-Tip Rocker Arc (Remove 4 Bolts at 5–6 Months)</h3>
+          <svg viewBox="0 0 380 205" class="w-full h-auto bg-stone-50 rounded-xl border border-stone-200">
+            <!-- Floor -->
+            <line x1="20" y1="185" x2="360" y2="185" stroke="#292524" stroke-width="2.5"/>
+            <!-- Curved Rocker Arc -->
+            <path d="M 45 152 Q 190 198 335 152 L 330 135 L 270 135 Q 190 154 110 135 L 50 135 Z" fill="#c79f6d" stroke="#292524" stroke-width="2"/>
+            <!-- Two Corner Legs sitting on flat pads -->
+            <rect x="85" y="35" width="28" height="100" fill="#e5c8a2" stroke="#292524" stroke-width="2" rx="3"/>
+            <rect x="267" y="35" width="28" height="100" fill="#e5c8a2" stroke="#292524" stroke-width="2" rx="3"/>
+            <!-- M8 Bolts coming UP from countersunk bottom holes -->
+            <rect x="96" y="112" width="6" height="46" fill="#4b5563" stroke="#111827" stroke-width="1.2"/>
+            <rect x="92" y="156" width="14" height="5" fill="#111827"/>
+            <rect x="278" y="112" width="6" height="46" fill="#4b5563" stroke="#111827" stroke-width="1.2"/>
+            <rect x="274" y="156" width="14" height="5" fill="#111827"/>
+            <!-- Brass Inserts in Leg Bottoms -->
+            <rect x="94" y="116" width="10" height="18" fill="#d97706" stroke="#78350f" stroke-width="1"/>
+            <rect x="276" y="116" width="10" height="18" fill="#d97706" stroke="#78350f" stroke-width="1"/>
+            <!-- Labels -->
+            <text x="190" y="64" text-anchor="middle" font-size="11" font-weight="800" fill="#1c1917">M8 Bolt + Brass Insert in Leg Bottom</text>
+            <text x="190" y="82" text-anchor="middle" font-size="10" font-weight="600" fill="#57534e">Unscrew 4 bolts to convert to flat 4-leg crib!</text>
+            <text x="64" y="126" text-anchor="middle" font-size="9.5" font-weight="800" fill="#b45309">Flat Stop End</text>
+            <text x="316" y="126" text-anchor="middle" font-size="9.5" font-weight="800" fill="#b45309">Flat Stop End</text>
+            <text x="190" y="198" text-anchor="middle" font-size="10" font-weight="700" fill="#059669">32" Wide Gentle Curve (88" Radius — Cannot Tip Over)</text>
+          </svg>
+        </div>
+
+        <!-- Diagram 1B: Option 2 Horizontal Glider 4-Bar Linkage -->
+        <div class="opt2-row border-2 border-stone-200 rounded-2xl p-3.5">
+          <h3 class="text-xs font-extrabold text-stone-900 mb-2">1. Option 2: Under-Bed Horizontal Glider (Zero Tilt, 4 Steel Flat-Bar Links)</h3>
+          <svg viewBox="0 0 380 210" class="w-full h-auto bg-stone-50 rounded-xl border border-stone-200">
+            <!-- Floor -->
+            <line x1="20" y1="190" x2="360" y2="190" stroke="#292524" stroke-width="2.5"/>
+            <!-- Stationary Low Glider Base Frame -->
+            <rect x="45" y="168" width="290" height="18" fill="#c79f6d" stroke="#292524" stroke-width="2" rx="3"/>
+            <rect x="75" y="114" width="20" height="54" fill="#c79f6d" stroke="#292524" stroke-width="2"/>
+            <rect x="285" y="114" width="20" height="54" fill="#c79f6d" stroke="#292524" stroke-width="2"/>
+            <rect x="75" y="114" width="230" height="14" fill="#b88e5a" stroke="#292524" stroke-width="2" rx="2"/>
+            <!-- Crib Corner Legs (Suspended) -->
+            <rect x="102" y="22" width="24" height="142" fill="#e5c8a2" stroke="#292524" stroke-width="2" rx="3"/>
+            <rect x="254" y="22" width="24" height="142" fill="#e5c8a2" stroke="#292524" stroke-width="2" rx="3"/>
+            <rect x="126" y="114" width="128" height="14" fill="#d6b082" stroke="#292524" stroke-width="1.8"/>
+            <!-- 2 Steel Flat-Bar Links (Left & Right) -->
+            <g stroke="#111827" stroke-width="1.5">
+              <rect x="81" y="118" width="10" height="44" rx="5" fill="#4b5563" transform="rotate(-14 86 123)"/>
+              <circle cx="86" cy="123" r="3.5" fill="#d97706"/>
+              <circle cx="95" cy="157" r="3.5" fill="#d97706"/>
+              <rect x="289" y="118" width="10" height="44" rx="5" fill="#4b5563" transform="rotate(-14 294 123)"/>
+              <circle cx="294" cy="123" r="3.5" fill="#d97706"/>
+              <circle cx="303" cy="157" r="3.5" fill="#d97706"/>
+            </g>
+            <!-- Red Center Safety Lock Pin -->
+            <rect x="180" y="116" width="20" height="10" rx="2" fill="#dc2626" stroke="#7f1d1d" stroke-width="1.5"/>
+            <!-- Horizontal Glide Arrows -->
+            <line x1="150" y1="62" x2="230" y2="62" stroke="#059669" stroke-width="2.5"/>
+            <polygon points="145,62 154,57 154,67" fill="#059669"/>
+            <polygon points="235,62 226,57 226,67" fill="#059669"/>
+            <!-- Labels -->
+            <text x="190" y="48" text-anchor="middle" font-size="11" font-weight="800" fill="#065f46">100% Level Horizontal Glide (0° Tilt)</text>
+            <text x="190" y="82" text-anchor="middle" font-size="10" font-weight="700" fill="#dc2626">Red Lock Pin engages at center to freeze rigid</text>
+            <text x="190" y="203" text-anchor="middle" font-size="10" font-weight="700" fill="#1c1917">4× Steel Patti Links (4.5" Hole-to-Hole) + M8 Bolts + Nylon Washers</text>
+          </svg>
+        </div>
+
+        <!-- Diagram 2: Round Dowel Spindles & 3 Mattress Heights -->
+        <div class="border-2 border-stone-200 rounded-2xl p-3.5">
+          <h3 class="text-xs font-extrabold text-stone-900 mb-2">2. Round 19mm Dowels (&lt;2" Gap) &amp; 24" Standing-Safe Depth</h3>
+          <svg viewBox="0 0 380 190" class="w-full h-auto bg-stone-50 rounded-xl border border-stone-200">
+            <!-- Crib Side Frame -->
+            <rect x="22" y="20" width="176" height="150" fill="none" stroke="#292524" stroke-width="5" rx="6"/>
+            <!-- Round Dowels -->
+            <g fill="#ebd3b3" stroke="#292524" stroke-width="1.4">
+              <rect x="44" y="22" width="10" height="146" rx="4"/>
+              <rect x="78" y="22" width="10" height="146" rx="4"/>
+              <rect x="112" y="22" width="10" height="146" rx="4"/>
+              <rect x="146" y="22" width="10" height="146" rx="4"/>
+              <rect x="176" y="22" width="10" height="146" rx="4"/>
+            </g>
+            <!-- Gap Arrow -->
+            <line x1="54" y1="88" x2="78" y2="88" stroke="#dc2626" stroke-width="2"/>
+            <rect x="44" y="64" width="46" height="18" rx="4" fill="#fef2f2" stroke="#dc2626"/>
+            <text x="67" y="77" text-anchor="middle" font-size="9.5" font-weight="800" fill="#dc2626">&lt;2" GAP</text>
+
+            <!-- Height Levels on Right -->
+            <text x="212" y="34" font-size="11" font-weight="800" fill="#1c1917">Mattress Holes (from Leg Bottom):</text>
+            <circle cx="218" cy="64" r="5" fill="#059669"/>
+            <text x="230" y="68" font-size="10.5" font-weight="700" fill="#065f46">18.5" H — Newborn (2–5m) • Rockers OK</text>
+            <circle cx="218" cy="100" r="5" fill="#d97706"/>
+            <text x="230" y="104" font-size="10.5" font-weight="700" fill="#92400e">12.5" H — Rolling (5–7m) • Remove Rockers</text>
+            <circle cx="218" cy="136" r="5" fill="#dc2626"/>
+            <text x="230" y="140" font-size="10.5" font-weight="700" fill="#991b1b">6.5" H — Standing (8–24m) • 24" Deep!</text>
+            <text x="212" y="168" font-size="10" font-weight="600" fill="#57534e">Top Rail is 34.5" H (full 24" above 4" mattress at 6.5" H)</text>
+          </svg>
+        </div>
+      </div>
+
+      <!-- SUB-TAB 3: SAFETY CHECKLIST -->
+      <div id="gview-safety" class="hidden space-y-3">
+        <div class="flex items-center justify-between bg-amber-50 border border-amber-200 rounded-xl p-3">
+          <span class="text-xs font-bold text-amber-950">Verify before putting baby inside:</span>
+          <span id="safety-score" class="text-xs font-extrabold text-amber-900 bg-white px-2.5 py-1 rounded-lg border border-amber-200">0 / 7 Done</span>
+        </div>
+        <div id="checklist-items" class="space-y-2"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // =========================================================================
+    // 1. CONSTANTS (EXACT INCHES -> 3D METERS) & APP STATE
+    // =========================================================================
+    const IN = 0.0254; // 1 inch = 0.0254 meters
+
+    const state = {
+      designOption: 2,  // 1: Bolt-On Rockers, 2: Under-Bed Horizontal Glider
+      explode: 0,       // 0 to 1
+      motionOn: true,   // Option 1: Rockers ON/OFF | Option 2: Glider Unlocked/Locked
+      stage: 1,         // 1: Newborn High (2-5m), 2: Standing Deep (6-24m), 3: Toddler/Co-Sleeper
+      xray: false,
+      showDims: true,
+      motionPhase: 0
+    };
+
+    const PART_INFO = {
+      rocker:     { code: 'R (×2)', name: 'Detachable Anti-Tip Rocker Arcs', dims: '32" × 2.5" × 1.75"', note: 'Gentle 88" radius arc with flat stop-ends. Unscrew 4 M8 bolts at 5–6 months to convert to flat 4-leg crib!' },
+      gliderBase: { code: 'G1–G3', name: 'Low Stationary Glider Base Frame', dims: '55.9" L × 31" W × 8.2" H', note: 'Low anti-tip floor frame with 2 floor stretchers & rubber pads. Keeps the crib footprint clean & minimal.' },
+      gliderLink: { code: 'G4 (×4)', name: 'Steel Flat-Bar Glider Links (Patti)', dims: '5.7" × 1.1" × 5mm (4.5" C-to-C)', note: '4 mild-steel / SS strips with M8 bolts, nylon spacer washers & nyloc nuts. Glides 100% level (0° tilt)!' },
+      gliderLock: { code: 'LOCK (×2)', name: 'Retractable Glider Safety Lock Pin', dims: '10mm Steel Pin + Flanged Bushings', note: 'CRITICAL: Push both red pins in once baby starts rolling/sitting (5m+) to lock the glider 100% rigid.' },
+      post:       { code: 'A (×4)', name: 'Minimalist Rounded Corner Legs', dims: '34.5" × 1.75" × 1.75"', note: 'Softly rounded edges & caps. Brass inserts at 6.5", 12.5", 18.5" H + lower pivot/rocker mount.' },
+      longRail:   { code: 'B (×4)', name: 'Long Side Rails', dims: '48.25" × 1.75" × 1.25"', note: 'Softly rounded top edges. Knockdown M6 Allen bolt + brass barrel nut + wood alignment dowel.' },
+      shortRail:  { code: 'C (×4)', name: 'Short End Rails', dims: '24.25" × 1.75" × 1.25"', note: 'Glued mortise/dowel joints into corner legs to form rigid left & right end frames.' },
+      spindle:    { code: 'D (×52)', name: 'Round Wooden Dowel Spindles', dims: '27" × 0.75" Dia (19mm)', note: 'STRICT <2" GAP! 17 per long side (1.97" gap), 9 per end (1.75" gap). Glued 0.5" deep into rails.' },
+      baseFrame:  { code: 'E (1 Set)', name: 'Adjustable Slatted Mattress Base', dims: '48" × 24" (10 Slats)', note: '10 airflow slats on inner ledger cleats + 4 steel L-hanger corner brackets bolted into leg brass inserts.' },
+      mattress:   { code: 'MATTRESS', name: 'Firm Baby Mattress', dims: '48" × 24" × 4" (4ft × 2ft)', note: 'Snug fit (<0.25" clearance). Use firm coir or high-density baby foam with tight cotton sheet.' },
+      toddlerBar: { code: 'F (×1)', name: 'Toddler / Co-Sleeper Rail', dims: '48.25" × 1.75" × 1.25"', note: 'Replaces front panel after 18m (or for bedside co-sleeper mode). Always lock/remove rockers first!' }
+    };
+
+    const SAFETY_ITEMS = [
+      { title: 'Lock Glider / Remove Rockers at 5–6 Months (Most Important!)', desc: 'Swinging/gliding is only for 2–5m soothing. As soon as baby starts rolling, sitting, or pulling up, engage both red lock pins (Option 2) or unscrew the 4 rocker bolts (Option 1).' },
+      { title: 'Strict <2-Inch Spindle Gap Test', desc: 'Measure gaps between the 19mm round dowels: 1.97" on long sides and 1.75" on short ends (never over 2.25").' },
+      { title: '24-Inch Standing Protection Depth', desc: 'In Stage 2 (Lowest base at 6.5" H), top of the 4" mattress sits at 10.5" H—leaving a full 24" (2 ft) guard wall up to the 34.5" top rail.' },
+      { title: 'Snug 48" × 24" × 4" Mattress Fit', desc: 'Inner box is 48.25" × 24.25". You should NOT be able to fit more than 1–2 fingers between mattress and rails.' },
+      { title: 'Zero-Pinch Glider / Anti-Tip Clearance', desc: 'In Option 2, verify nylon spacer washers keep links smooth with Nyloc locknuts (never loose). In Option 1, verify rocker flat stop-ends limit tilt to ~6°.' },
+      { title: 'Zero Sharp Edges & Splinters', desc: 'Round all top rails and leg tops smoothly. Rub a bare palm over every round spindle—sand to 320 grit.' },
+      { title: 'Baby-Safe Non-Toxic Finish', desc: 'Zero chemical odor. Use raw beeswax + mineral oil or cured water-based zero-VOC matte polish only.' }
+    ];
+
+    // =========================================================================
+    // 2. THREE.JS SCENE & MINIMALIST MODEL BUILDER
+    // =========================================================================
+    let scene, camera, renderer;
+    let cribRoot, headEnd, footEnd, backPanel, frontPanel, toddlerBarGroup, baseGroup, mattressMesh;
+    let rockerLeft, rockerRight;
+    let gliderSystemGroup, gliderBaseLeft, gliderBaseRight, gliderStretchers, gliderLinkPivots = [], gliderLockPins = [];
+    let baseCornerBolts = [], cornerPostBolts = [], rockerBolts = [], gliderPivotBolts = [];
+    let dimsGroup;
+    let woodMat, woodRailMat, dowelMat, metalMat, steelMat, darkMetalMat, brassMat, nylonMat, redMat, rubberMat, holeMat, mattressMat;
+    let interactiveMeshes = [], highlightedMeshes = [];
+    let raycaster, pointer;
+
+    // Exact structural dimensions (in inches) matching the 48" × 24" × 4" mattress
+    const INNER_L = 48.25;    // Inside length between legs
+    const INNER_W = 24.25;    // Inside width between legs
+    const LEG_W = 1.75;       // Corner leg thickness (1.75" × 1.75")
+    const LEG_H = 34.5;       // Leg height (flat on floor = 34.5" total height)
+    const RAIL_H = 1.75;      // Top & bottom rail height
+    const RAIL_T = 1.25;      // Top & bottom rail thickness
+    const BOT_RAIL_Y = 5.75;  // Bottom rail centerline (sits 4.875" to 6.625" above leg bottom)
+    const TOP_RAIL_Y = 33.625;// Top rail centerline (top flush at 34.5")
+    const ROCKER_H = 2.0;     // Height added by curved rocker arc at lowest center point
+    const ROCKER_R = 88.0;    // Gentle 88" arc radius for smooth, anti-tip rocking
+    const GLIDER_REST_Y = 1.5;// Crib leg clearance above floor when suspended on 4 steel links
+    const GLIDER_LINK_L = 4.5;// Center-to-center length of the 4 steel flat-bar links (inches)
+    const GLIDER_PIVOT_Y = 7.25; // Upper pivot height on stationary glider base (inches)
+    const GLIDER_BASE_X = 27.20; // Centerline X of stationary glider side runners (inches)
+
+    // Smooth Google-3D-Animals style touch/mouse orbit state
+    const camOrbit = {
+      theta: Math.PI * 0.22,
+      desiredTheta: Math.PI * 0.22,
+      phi: Math.PI * 0.37,
+      desiredPhi: Math.PI * 0.37,
+      radius: 88 * IN,
+      desiredRadius: 88 * IN,
+      target: new THREE.Vector3(0, 18.5 * IN, 0),
+      desiredTarget: new THREE.Vector3(0, 18.5 * IN, 0),
+      isDragging: false,
+      dragMoved: false,
+      prevX: 0,
+      prevY: 0,
+      pinchDist: 0
+    };
+
+    /**
+     * Generates a procedural natural light-oak / beech wood grain canvas texture.
+     */
+    function createWoodTexture(baseHex, grainHex) {
+      const canvas = document.createElement('canvas');
+      canvas.width = 256;
+      canvas.height = 256;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = baseHex;
+      ctx.fillRect(0, 0, 256, 256);
+
+      ctx.strokeStyle = grainHex;
+      ctx.globalAlpha = 0.13;
+      for (let i = 0; i < 60; i++) {
+        ctx.beginPath();
+        const y = (i / 60) * 256;
+        ctx.lineWidth = 1 + (i % 3);
+        ctx.moveTo(0, y);
+        ctx.bezierCurveTo(85, y + Math.sin(i) * 4, 170, y - Math.cos(i) * 4, 256, y);
+        ctx.stroke();
+      }
+      ctx.globalAlpha = 1.0;
+
+      const tex = new THREE.CanvasTexture(canvas);
+      tex.wrapS = THREE.RepeatWrapping;
+      tex.wrapT = THREE.RepeatWrapping;
+      return tex;
+    }
+
+    function makePart(geo, mat, partKey) {
+      const mesh = new THREE.Mesh(geo, mat);
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      mesh.userData.partKey = partKey;
+      mesh.userData.origMat = mat;
+      interactiveMeshes.push(mesh);
+      return mesh;
+    }
+
+    /**
+     * Softly chamfered/beveled wood bar using ExtrudeGeometry for a designer Scandinavian look.
+     */
+    function createRoundedBoxGeo(w, h, d, r) {
+      const shape = new THREE.Shape();
+      const hw = w / 2, hh = h / 2;
+      const cr = Math.min(r, hw * 0.45, hh * 0.45);
+      shape.moveTo(-hw + cr, -hh);
+      shape.lineTo(hw - cr, -hh);
+      shape.quadraticCurveTo(hw, -hh, hw, -hh + cr);
+      shape.lineTo(hw, hh - cr);
+      shape.quadraticCurveTo(hw, hh, hw - cr, hh);
+      shape.lineTo(-hw + cr, hh);
+      shape.quadraticCurveTo(-hw, hh, -hw, hh - cr);
+      shape.lineTo(-hw, -hh + cr);
+      shape.quadraticCurveTo(-hw, -hh, -hw + cr, -hh);
+
+      const geo = new THREE.ExtrudeGeometry(shape, {
+        depth: d,
+        bevelEnabled: true,
+        bevelThickness: cr * 0.4,
+        bevelSize: cr * 0.4,
+        bevelSegments: 2
+      });
+      geo.translate(0, 0, -d / 2);
+      return geo;
+    }
+
+    /**
+     * Realistic Socket-Head M6/M8 Allen Bolt + Washer aligned along +X (head at x=0, shaft -> +X).
+     */
+    function createAllenBolt(lengthIn, radiusIn, partKey) {
+      const grp = new THREE.Group();
+      const headH = radiusIn * 1.45;
+      const headR = radiusIn * 1.75;
+
+      const head = makePart(new THREE.CylinderGeometry(headR * IN, headR * IN, headH * IN, 16), steelMat, partKey);
+      head.rotation.z = Math.PI / 2;
+      head.position.x = -(headH / 2) * IN;
+      grp.add(head);
+
+      const hex = makePart(new THREE.CylinderGeometry(headR * 0.56 * IN, headR * 0.56 * IN, 0.08 * IN, 6), darkMetalMat, partKey);
+      hex.rotation.z = Math.PI / 2;
+      hex.position.x = -(headH + 0.01) * IN;
+      grp.add(hex);
+
+      const washer = makePart(new THREE.CylinderGeometry(headR * 1.32 * IN, headR * 1.32 * IN, 0.07 * IN, 16), steelMat, partKey);
+      washer.rotation.z = Math.PI / 2;
+      washer.position.x = 0.035 * IN;
+      grp.add(washer);
+
+      const shaft = makePart(new THREE.CylinderGeometry(radiusIn * IN, radiusIn * IN, lengthIn * IN, 12), metalMat, partKey);
+      shaft.rotation.z = Math.PI / 2;
+      shaft.position.x = (lengthIn / 2) * IN;
+      grp.add(shaft);
+
+      return grp;
+    }
+
+    /**
+     * Recessed Brass Threaded Insert Nut (M6/M8) + dark drilled bore aligned along +X.
+     */
+    function createThreadedInsert(partKey) {
+      const grp = new THREE.Group();
+      const flange = makePart(new THREE.CylinderGeometry(0.28 * IN, 0.28 * IN, 0.06 * IN, 14), brassMat, partKey);
+      flange.rotation.z = Math.PI / 2;
+      grp.add(flange);
+
+      const body = makePart(new THREE.CylinderGeometry(0.21 * IN, 0.21 * IN, 0.52 * IN, 12), brassMat, partKey);
+      body.rotation.z = Math.PI / 2;
+      body.position.x = 0.26 * IN;
+      grp.add(body);
+
+      const bore = makePart(new THREE.CylinderGeometry(0.14 * IN, 0.14 * IN, 0.08 * IN, 12), holeMat, partKey);
+      bore.rotation.z = Math.PI / 2;
+      bore.position.x = -0.02 * IN;
+      grp.add(bore);
+
+      return grp;
+    }
+
+    /**
+     * Heavy-Duty Steel L-Hanger Bracket mounted to each corner of the adjustable mattress base.
+     */
+    function createBaseCornerBracket(sx, sz) {
+      const grp = new THREE.Group();
+      const thick = 0.12 * IN;
+
+      // Vertical plate flush against outer X face of mattress frame & extending out to corner leg centerline
+      const vertPlate = makePart(new THREE.BoxGeometry(thick, 1.55 * IN, 3.45 * IN), darkMetalMat, 'baseFrame');
+      vertPlate.position.set(sx * 24.06 * IN, -0.78 * IN, sz * 11.8 * IN);
+      grp.add(vertPlate);
+
+      // Horizontal bottom support cradle lip tucked directly under the mattress frame corner
+      const cradleLip = makePart(new THREE.BoxGeometry(2.1 * IN, thick, 2.2 * IN), darkMetalMat, 'baseFrame');
+      cradleLip.position.set(sx * 23.05 * IN, -1.56 * IN, sz * 11.15 * IN);
+      grp.add(cradleLip);
+
+      // 2 Vertical mounting bolt heads fastening the steel cradle to the wooden mattress frame
+      [-0.45, 0.45].forEach(offset => {
+        const screw = makePart(new THREE.CylinderGeometry(0.15 * IN, 0.15 * IN, 0.12 * IN, 10), steelMat, 'baseFrame');
+        screw.position.set(sx * (23.05 + offset) * IN, -1.66 * IN, sz * 11.15 * IN);
+        grp.add(screw);
+      });
+
+      // Side screws pinning vertical plate to mattress frame end rail
+      [-0.35, 0.35].forEach(yOff => {
+        const sHead = makePart(new THREE.CylinderGeometry(0.13 * IN, 0.13 * IN, 0.12 * IN, 10), steelMat, 'baseFrame');
+        sHead.rotation.z = Math.PI / 2;
+        sHead.position.set(sx * 24.13 * IN, (-0.78 + yOff) * IN, sz * 10.65 * IN);
+        grp.add(sHead);
+      });
+
+      // Horizontal M6 Allen Bolt + Washer passing through bracket tab into the corner leg's brass insert
+      const mountBolt = createAllenBolt(1.2, 0.14, 'baseFrame');
+      if (sx < 0) mountBolt.rotation.y = Math.PI;
+      const baseX = sx * 23.95 * IN;
+      mountBolt.position.set(baseX, -0.75 * IN, sz * 13.0 * IN);
+      mountBolt.userData.baseX = baseX;
+      mountBolt.userData.signX = sx;
+      baseCornerBolts.push(mountBolt);
+      grp.add(mountBolt);
+
+      return grp;
+    }
+
+    /**
+     * Builds Option 1: Detachable Anti-Tip Curved Wooden Rocker Arc (32" long, 88" radius)
+     * with flat stop-ends, 2 countersunk M8 mounting bolts, and 2 anti-twist wooden alignment dowels.
+     */
+    function buildRockerArc(xPos, halfZ) {
+      const grp = new THREE.Group();
+
+      // Draw gentle curved rocker profile in the Z-Y plane (local X = Z, local Y = Y), then rotate into place
+      const shape = new THREE.Shape();
+      const halfLen = 16.0; // 32" total rocker length
+      const segs = 28;
+      // Bottom curved contact arc (y = -ROCKER_H at center z = 0, curving gently upward toward ends)
+      for (let i = 0; i <= segs; i++) {
+        const z = -halfLen + (i / segs) * (halfLen * 2);
+        const yCurve = -ROCKER_H + (z * z) / (2 * ROCKER_R);
+        if (i === 0) shape.moveTo(z * IN, yCurve * IN);
+        else shape.lineTo(z * IN, yCurve * IN);
+      }
+      // Flat anti-tip stop end on +Z, top flat leg seating pads at y = 0, gentle arch in center, flat stop on -Z
+      shape.lineTo(15.6 * IN, 0.0 * IN);
+      shape.lineTo(11.4 * IN, 0.0 * IN);
+      shape.quadraticCurveTo(0, -0.75 * IN, -11.4 * IN, 0.0 * IN);
+      shape.lineTo(-15.6 * IN, 0.0 * IN);
+      shape.closePath();
+
+      const arcGeo = new THREE.ExtrudeGeometry(shape, {
+        depth: 1.75 * IN,
+        bevelEnabled: true,
+        bevelThickness: 0.12 * IN,
+        bevelSize: 0.12 * IN,
+        bevelSegments: 2
+      });
+      arcGeo.translate(0, 0, -0.875 * IN);
+      arcGeo.rotateY(Math.PI / 2); // Align rocker length along world Z axis
+
+      const arcMesh = makePart(arcGeo, woodRailMat, 'rocker');
+      arcMesh.position.set(xPos, 0, 0);
+      grp.add(arcMesh);
+
+      // 2 Countersunk M8 Allen Bolts (inserted upward from underside of rocker into leg brass inserts)
+      [-halfZ, halfZ].forEach(zPos => {
+        const bolt = createAllenBolt(2.4, 0.17, 'rocker');
+        bolt.rotation.z = Math.PI / 2; // Point bolt shaft upward (+Y) into corner leg
+        const baseY = -1.45 * IN;
+        bolt.position.set(xPos, baseY, zPos);
+        bolt.userData.baseY = baseY;
+        rockerBolts.push(bolt);
+        grp.add(bolt);
+
+        // Anti-twist 8mm alignment wood dowel next to each M8 bolt
+        const pin = makePart(new THREE.CylinderGeometry(0.14 * IN, 0.14 * IN, 0.9 * IN, 10), dowelMat, 'rocker');
+        pin.position.set(xPos, 0.15 * IN, zPos * 0.93);
+        grp.add(pin);
+      });
+
+      return grp;
+    }
+
+    /**
+     * Builds Option 2: Under-Bed Horizontal Glider Base + 4 Steel Flat-Bar Links + Retractable Safety Lock Pins.
+     * Geometry: Stationary low side frames at x = ±27.20" (8.2" tall), 4 hanging steel links (4.5" C-to-C)
+     * at x = ±26.15" connecting upper pivot (y = 7.25") down to crib leg lower pivot (y = 2.75" world).
+     */
+    function buildHorizontalGlider(halfX, halfZ) {
+      gliderSystemGroup = new THREE.Group();
+      scene.add(gliderSystemGroup);
+
+      const baseX = GLIDER_BASE_X * IN;
+      const linkX = 26.15 * IN;
+      const pivotY = GLIDER_PIVOT_Y * IN;
+
+      // Helper to create one sculpted low end frame (left or right)
+      function createBaseEnd(sign) {
+        const grp = new THREE.Group();
+        const x = sign * baseX;
+
+        // Bottom runner along Z (31" long, 2.0" tall, 1.5" thick, sits on 0.25" rubber floor pads)
+        const runner = makePart(createRoundedBoxGeo(1.5 * IN, 2.0 * IN, 31.0 * IN, 0.2 * IN), woodRailMat, 'gliderBase');
+        runner.position.set(x, 1.25 * IN, 0);
+        grp.add(runner);
+
+        // 2 Non-slip rubber floor pads under runner ends
+        [-13.2, 13.2].forEach(zIn => {
+          const pad = makePart(new THREE.CylinderGeometry(0.65 * IN, 0.65 * IN, 0.25 * IN, 16), rubberMat, 'gliderBase');
+          pad.position.set(x, 0.125 * IN, zIn * IN);
+          grp.add(pad);
+        });
+
+        // 2 Short Low Corner Risers at z = ±13.0" rising from runner to y = 8.2"
+        [-halfZ, halfZ].forEach(zPos => {
+          const riser = makePart(createRoundedBoxGeo(1.5 * IN, 6.2 * IN, 1.8 * IN, 0.2 * IN), woodMat, 'gliderBase');
+          riser.position.set(x, 5.1 * IN, zPos);
+          grp.add(riser);
+
+          // Upper M8 Pivot Bolt + Nylon Spacer Washer + Nyloc Nut connecting riser to steel link
+          const upBolt = createAllenBolt(2.35, 0.17, 'gliderLink');
+          if (sign > 0) upBolt.rotation.y = Math.PI;
+          const bBaseX = x + sign * 0.78 * IN;
+          upBolt.position.set(bBaseX, pivotY, zPos);
+          upBolt.userData.baseX = bBaseX;
+          upBolt.userData.signX = sign;
+          gliderPivotBolts.push(upBolt);
+          grp.add(upBolt);
+
+          // White Nylon anti-friction spacer washer between stationary riser and steel link
+          const nylonW = makePart(new THREE.CylinderGeometry(0.38 * IN, 0.38 * IN, 0.14 * IN, 16), nylonMat, 'gliderLink');
+          nylonW.rotation.z = Math.PI / 2;
+          nylonW.position.set(x - sign * 0.82 * IN, pivotY, zPos);
+          grp.add(nylonW);
+
+          // Steel Nyloc locknut on inner side of upper pivot
+          const nut = makePart(new THREE.CylinderGeometry(0.28 * IN, 0.28 * IN, 0.22 * IN, 6), steelMat, 'gliderLink');
+          nut.rotation.z = Math.PI / 2;
+          nut.position.set(sign * (linkX / IN - 0.22) * IN, pivotY, zPos);
+          grp.add(nut);
+        });
+
+        // Top Tie-Bar connecting the two short risers at y = 7.25" (houses center safety lock pin!)
+        const tieBar = makePart(createRoundedBoxGeo(1.5 * IN, 1.5 * IN, 24.4 * IN, 0.2 * IN), woodRailMat, 'gliderBase');
+        tieBar.position.set(x, pivotY, 0);
+        grp.add(tieBar);
+
+        // Flanged Steel Bushing on outer & inner face of tie-bar for the Safety Lock Pin
+        const lockBushing = makePart(new THREE.CylinderGeometry(0.36 * IN, 0.36 * IN, 1.62 * IN, 16), steelMat, 'gliderLock');
+        lockBushing.rotation.z = Math.PI / 2;
+        lockBushing.position.set(x, pivotY, 0);
+        grp.add(lockBushing);
+
+        // Retractable Red Safety Lock Pin (slides inward to lock crib bottom rail at y = 7.25", z = 0)
+        const pinGrp = new THREE.Group();
+        const pinShaft = makePart(new THREE.CylinderGeometry(0.21 * IN, 0.21 * IN, 3.6 * IN, 14), steelMat, 'gliderLock');
+        pinShaft.rotation.z = Math.PI / 2;
+        pinShaft.position.x = -sign * 0.5 * IN;
+        pinGrp.add(pinShaft);
+
+        const pinKnob = makePart(new THREE.CylinderGeometry(0.48 * IN, 0.48 * IN, 0.65 * IN, 18), redMat, 'gliderLock');
+        pinKnob.rotation.z = Math.PI / 2;
+        pinKnob.position.x = sign * 1.45 * IN;
+        pinGrp.add(pinKnob);
+
+        pinGrp.position.set(x, pivotY, 0);
+        pinGrp.userData.baseX = x;
+        pinGrp.userData.signX = sign;
+        gliderLockPins.push(pinGrp);
+        grp.add(pinGrp);
+
+        // 2 Hanging Steel Flat-Bar Links (4.5" C-to-C) pivoting around upper bolt at (linkX, pivotY, ±halfZ)
+        [-halfZ, halfZ].forEach(zPos => {
+          const pivotGrp = new THREE.Group();
+          pivotGrp.position.set(sign * linkX, pivotY, zPos);
+          pivotGrp.userData.baseX = sign * linkX;
+          pivotGrp.userData.signX = sign;
+
+          // Rounded steel flat-bar (5.7" long, 1.1" wide, 0.2" thick)
+          const barGeo = createRoundedBoxGeo(0.2 * IN, 5.7 * IN, 1.1 * IN, 0.45 * IN);
+          const barMesh = makePart(barGeo, darkMetalMat, 'gliderLink');
+          barMesh.position.y = -(GLIDER_LINK_L / 2) * IN;
+          pivotGrp.add(barMesh);
+
+          // Lower M8 Pivot Bolt + Nylon Spacer Washer connecting link bottom to crib leg
+          const lowY = -GLIDER_LINK_L * IN;
+          const lowNylon = makePart(new THREE.CylinderGeometry(0.38 * IN, 0.38 * IN, 0.14 * IN, 16), nylonMat, 'gliderLink');
+          lowNylon.rotation.z = Math.PI / 2;
+          lowNylon.position.set(-sign * 0.17 * IN, lowY, 0);
+          pivotGrp.add(lowNylon);
+
+          const lowBolt = createAllenBolt(2.3, 0.17, 'gliderLink');
+          if (sign > 0) lowBolt.rotation.y = Math.PI;
+          lowBolt.position.set(sign * 0.18 * IN, lowY, 0);
+          pivotGrp.add(lowBolt);
+
+          gliderLinkPivots.push(pivotGrp);
+          grp.add(pivotGrp);
+        });
+
+        return grp;
+      }
+
+      gliderBaseLeft = createBaseEnd(-1);
+      gliderBaseRight = createBaseEnd(1);
+      gliderSystemGroup.add(gliderBaseLeft, gliderBaseRight);
+
+      // 2 Long Floor Stretcher Beams connecting Left & Right Stationary Base Frames
+      gliderStretchers = new THREE.Group();
+      const stretcherLen = (GLIDER_BASE_X * 2 - 1.5) * IN; // 52.9"
+      [-10.5, 10.5].forEach(zIn => {
+        const beam = makePart(createRoundedBoxGeo(stretcherLen, 1.6 * IN, 1.25 * IN, 0.18 * IN), woodRailMat, 'gliderBase');
+        beam.position.set(0, 1.25 * IN, zIn * IN);
+        gliderStretchers.add(beam);
+
+        // Exposed mortise-tenon / bolt hardware at both ends
+        [-1, 1].forEach(sx => {
+          const bolt = createAllenBolt(2.2, 0.15, 'gliderBase');
+          if (sx > 0) bolt.rotation.y = Math.PI;
+          bolt.position.set(sx * (GLIDER_BASE_X + 0.78) * IN, 1.25 * IN, zIn * IN);
+          gliderStretchers.add(bolt);
+        });
+      });
+      gliderSystemGroup.add(gliderStretchers);
+    }
+
+    /**
+     * Draws a light, subtle 3D architectural dimension line + crisp transparent text sprite.
+     */
+    function add3DDimension(parent, p1, p2, text, textOffset = new THREE.Vector3(0, 0, 0)) {
+      const lineMat = new THREE.LineBasicMaterial({ color: 0x78716c, transparent: true, opacity: 0.55 });
+      const lineGeo = new THREE.BufferGeometry().setFromPoints([p1, p2]);
+      parent.add(new THREE.Line(lineGeo, lineMat));
+
+      const dir = new THREE.Vector3().subVectors(p2, p1).normalize();
+      const perp = Math.abs(dir.y) > 0.9 ? new THREE.Vector3(1, 0, 0) : new THREE.Vector3(0, 1, 0);
+      const tickLen = 1.1 * IN;
+      [p1, p2].forEach(p => {
+        const tGeo = new THREE.BufferGeometry().setFromPoints([
+          p.clone().addScaledVector(perp, -tickLen),
+          p.clone().addScaledVector(perp, tickLen)
+        ]);
+        parent.add(new THREE.Line(tGeo, lineMat));
+      });
+
+      const canvas = document.createElement('canvas');
+      canvas.width = 320;
+      canvas.height = 72;
+      const ctx = canvas.getContext('2d');
+      ctx.font = '700 32px Inter, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.lineWidth = 7;
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.88)';
+      ctx.strokeText(text, 160, 36);
+      ctx.fillStyle = '#44403c';
+      ctx.fillText(text, 160, 36);
+
+      const tex = new THREE.CanvasTexture(canvas);
+      const spriteMat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false });
+      const sprite = new THREE.Sprite(spriteMat);
+      const mid = new THREE.Vector3().addVectors(p1, p2).multiplyScalar(0.5).add(textOffset);
+      sprite.position.copy(mid);
+      sprite.scale.set(16 * IN, 3.6 * IN, 1);
+      parent.add(sprite);
+    }
+
+    /**
+     * Builds the complete Minimalist 4-Leg Rocker Crib with Round Dowels & Realistic Joinery.
+     */
+    function buildModel() {
+      // Warm Scandinavian Beech / Light Teak palette
+      woodMat = new THREE.MeshStandardMaterial({
+        map: createWoodTexture('#e3c39b', '#966838'),
+        roughness: 0.48, metalness: 0.02, transparent: true, opacity: 1
+      });
+      woodRailMat = new THREE.MeshStandardMaterial({
+        map: createWoodTexture('#d6b082', '#825529'),
+        roughness: 0.52, metalness: 0.03, transparent: true, opacity: 1
+      });
+      dowelMat = new THREE.MeshStandardMaterial({
+        map: createWoodTexture('#ebd1ae', '#a67746'),
+        roughness: 0.45, metalness: 0.02, transparent: true, opacity: 1
+      });
+      metalMat = new THREE.MeshStandardMaterial({ color: 0x6b7280, roughness: 0.3, metalness: 0.85 });
+      steelMat = new THREE.MeshStandardMaterial({ color: 0xb8c0cc, roughness: 0.22, metalness: 0.9 });
+      darkMetalMat = new THREE.MeshStandardMaterial({ color: 0x333740, roughness: 0.42, metalness: 0.82 });
+      brassMat = new THREE.MeshStandardMaterial({ color: 0xd97706, roughness: 0.32, metalness: 0.82 });
+      nylonMat = new THREE.MeshStandardMaterial({ color: 0xf5f5f4, roughness: 0.4, metalness: 0.05 });
+      redMat = new THREE.MeshStandardMaterial({ color: 0xdc2626, roughness: 0.35, metalness: 0.15 });
+      rubberMat = new THREE.MeshStandardMaterial({ color: 0x262626, roughness: 0.92, metalness: 0.05 });
+      holeMat = new THREE.MeshStandardMaterial({ color: 0x2a1c12, roughness: 0.95, metalness: 0.0 });
+      mattressMat = new THREE.MeshStandardMaterial({ color: 0xfafaf9, roughness: 0.92, metalness: 0 });
+
+      // Main crib root (y = 0 in local space is the bottom of the 4 wooden legs)
+      cribRoot = new THREE.Group();
+      cribRoot.position.y = GLIDER_REST_Y * IN;
+      scene.add(cribRoot);
+
+      const halfX = (INNER_L / 2 + LEG_W / 2) * IN; // 25.0"
+      const halfZ = (INNER_W / 2 + LEG_W / 2) * IN; // 13.0"
+      const topRailY = TOP_RAIL_Y * IN;
+      const botRailY = BOT_RAIL_Y * IN;
+      const spindleLen = (TOP_RAIL_Y - BOT_RAIL_Y - 0.5) * IN; // 27.375" (glued 0.5" into rails)
+      const spindleCenterY = ((TOP_RAIL_Y + BOT_RAIL_Y) / 2) * IN;
+
+      // 1A. Option 1: Detachable Bolt-On Anti-Tip Rocker Arcs (Left & Right)
+      rockerLeft = buildRockerArc(-halfX, halfZ);
+      rockerRight = buildRockerArc(halfX, halfZ);
+      cribRoot.add(rockerLeft, rockerRight);
+
+      // 1B. Option 2: Under-Bed Horizontal Glider Base + 4 Steel Flat-Bar Links + Lock Pins
+      buildHorizontalGlider(halfX, halfZ);
+
+      // 2. Left & Right Short End Frames (with 4 Corner Legs + 9 Round Dowels per end)
+      headEnd = buildEndFrame(-halfX, halfZ, topRailY, botRailY, spindleLen, spindleCenterY, -1);
+      footEnd = buildEndFrame(halfX, halfZ, topRailY, botRailY, spindleLen, spindleCenterY, 1);
+      cribRoot.add(headEnd, footEnd);
+
+      // 3. Back & Front Long Side Panels (17 Round Dowels per side, 1.97" clear gap)
+      backPanel = buildLongPanel(-halfZ, topRailY, botRailY, spindleLen, spindleCenterY);
+      frontPanel = buildLongPanel(halfZ, topRailY, botRailY, spindleLen, spindleCenterY);
+      cribRoot.add(backPanel, frontPanel);
+
+      // 4. Stage 3 Toddler / Co-Sleeper Stabilizer Rail
+      toddlerBarGroup = new THREE.Group();
+      const tBar = makePart(createRoundedBoxGeo(INNER_L * IN, RAIL_H * IN, RAIL_T * IN, 0.22 * IN), woodRailMat, 'toddlerBar');
+      tBar.position.set(0, botRailY, halfZ);
+      toddlerBarGroup.add(tBar);
+      [-1, 1].forEach(sx => {
+        const dowel = makePart(new THREE.CylinderGeometry(0.16 * IN, 0.16 * IN, 1.3 * IN, 10), dowelMat, 'toddlerBar');
+        dowel.rotation.z = Math.PI / 2;
+        dowel.position.set(sx * (INNER_L / 2 + 0.25) * IN, botRailY - 0.35 * IN, halfZ);
+        toddlerBarGroup.add(dowel);
+      });
+      toddlerBarGroup.visible = false;
+      cribRoot.add(toddlerBarGroup);
+
+      // 5. Adjustable Slatted Mattress Base (48" × 24") + Inner Ledger Cleats + 4 Steel L-Brackets
+      baseGroup = new THREE.Group();
+      cribRoot.add(baseGroup);
+
+      [-1, 1].forEach(sz => {
+        const e1 = makePart(new THREE.BoxGeometry(48 * IN, 1.5 * IN, 1.0 * IN), woodRailMat, 'baseFrame');
+        e1.position.set(0, -0.75 * IN, sz * 11.5 * IN);
+        baseGroup.add(e1);
+
+        // Inner wooden ledger cleat strip that physically carries the 10 airflow slats
+        const ledger = makePart(new THREE.BoxGeometry(46 * IN, 0.75 * IN, 0.75 * IN), dowelMat, 'baseFrame');
+        ledger.position.set(0, -1.125 * IN, sz * 10.625 * IN);
+        baseGroup.add(ledger);
+      });
+      [-1, 1].forEach(sx => {
+        const e2 = makePart(new THREE.BoxGeometry(1.0 * IN, 1.5 * IN, 22 * IN), woodRailMat, 'baseFrame');
+        e2.position.set(sx * 23.5 * IN, -0.75 * IN, 0);
+        baseGroup.add(e2);
+      });
+      for (let i = 0; i < 10; i++) {
+        const x = (-21.5 + (i / 9) * 43) * IN;
+        const slat = makePart(new THREE.BoxGeometry(2.0 * IN, 0.75 * IN, 22.0 * IN), dowelMat, 'baseFrame');
+        slat.position.set(x, -0.375 * IN, 0);
+        baseGroup.add(slat);
+
+        // Countersunk brass wood screws fastening each slat to the inner ledger strip
+        [-1, 1].forEach(sz => {
+          const screw = makePart(new THREE.CylinderGeometry(0.11 * IN, 0.11 * IN, 0.06 * IN, 8), brassMat, 'baseFrame');
+          screw.position.set(x, 0.01 * IN, sz * 10.625 * IN);
+          baseGroup.add(screw);
+        });
+      }
+
+      // 4 Steel L-Hanger Corner Support Brackets + M6 Mounting Bolts
+      [-1, 1].forEach(sx => {
+        [-1, 1].forEach(sz => {
+          baseGroup.add(createBaseCornerBracket(sx, sz));
+        });
+      });
+
+      // Firm 48" × 24" × 4" Mattress (softly beveled look)
+      mattressMesh = makePart(createRoundedBoxGeo(47.8 * IN, 3.85 * IN, 23.8 * IN, 0.45 * IN), mattressMat, 'mattress');
+      mattressMesh.position.set(0, 2.0 * IN, 0);
+      baseGroup.add(mattressMesh);
+
+      // 6. Light In-Model 3D Measurements (Feet & Inches)
+      dimsGroup = new THREE.Group();
+      scene.add(dimsGroup);
+
+      const floorY = 0.25 * IN;
+      // Bed Length: 4 ft (48") along front floor
+      add3DDimension(
+        dimsGroup,
+        new THREE.Vector3(-24 * IN, floorY, 20.5 * IN),
+        new THREE.Vector3(24 * IN, floorY, 20.5 * IN),
+        'Bed: 4 ft (48")',
+        new THREE.Vector3(0, 0, 3.2 * IN)
+      );
+      // Bed Width: 2 ft (24") along right floor
+      add3DDimension(
+        dimsGroup,
+        new THREE.Vector3(31 * IN, floorY, -12 * IN),
+        new THREE.Vector3(31 * IN, floorY, 12 * IN),
+        'Bed: 2 ft (24")',
+        new THREE.Vector3(6.8 * IN, 0, 0)
+      );
+      // Crib Height: 2 ft 10.5" (34.5" Legs) on left side
+      add3DDimension(
+        dimsGroup,
+        new THREE.Vector3(-31 * IN, 2 * IN, -13 * IN),
+        new THREE.Vector3(-31 * IN, 36.5 * IN, -13 * IN),
+        '2 ft 10.5" H',
+        new THREE.Vector3(-7.0 * IN, 0, 0)
+      );
+      // Safe Spindle Gap: <2" on front rail
+      add3DDimension(
+        dimsGroup,
+        new THREE.Vector3(-4.1 * IN, 29 * IN, 14.5 * IN),
+        new THREE.Vector3(-2.1 * IN, 29 * IN, 14.5 * IN),
+        '<2" Safe Gap',
+        new THREE.Vector3(0, 3 * IN, 1.5 * IN)
+      );
+      // Mattress thickness: 4"
+      add3DDimension(
+        dimsGroup,
+        new THREE.Vector3(19.5 * IN, 20.5 * IN, 14.5 * IN),
+        new THREE.Vector3(19.5 * IN, 24.5 * IN, 14.5 * IN),
+        '4" Mattress',
+        new THREE.Vector3(6.8 * IN, 0, 1.5 * IN)
+      );
+    }
+
+    function buildEndFrame(xPos, halfZ, topRailY, botRailY, spindleLen, spindleCenterY, sign) {
+      const grp = new THREE.Group();
+
+      // 2 Rounded Minimalist Corner Legs
+      [-halfZ, halfZ].forEach(zPos => {
+        const legGeo = createRoundedBoxGeo(LEG_W * IN, LEG_H * IN, LEG_W * IN, 0.28 * IN);
+        const leg = makePart(legGeo, woodMat, 'post');
+        leg.position.set(xPos, (LEG_H / 2) * IN, zPos);
+        grp.add(leg);
+        // Brass M8 Threaded Insert embedded in bottom of each corner leg (receives Option 1 rocker arc bolt)
+        const legBotInsert = createThreadedInsert('rocker');
+        legBotInsert.rotation.z = Math.PI / 2; // point upward (+Y) into leg
+        legBotInsert.position.set(xPos, 0.05 * IN, zPos);
+        grp.add(legBotInsert);
+
+        // Recessed Brass M8 Threaded Insert on outer leg face at y = 1.25" (receives Option 2 lower glider link bolt)
+        const legGliderInsert = createThreadedInsert('gliderLink');
+        if (sign > 0) legGliderInsert.rotation.y = Math.PI;
+        legGliderInsert.position.set(xPos + sign * (LEG_W / 2) * IN, 1.25 * IN, zPos);
+        grp.add(legGliderInsert);
+
+        // 3 Recessed Brass Threaded Inserts on inner leg face for Adjustable Mattress Heights (6.5", 12.5", 18.5")
+        [6.5, 12.5, 18.5].forEach(hInch => {
+          const insert = createThreadedInsert('baseFrame');
+          if (sign < 0) insert.rotation.y = Math.PI; // face inward toward mattress
+          insert.position.set(xPos - sign * (LEG_W / 2) * IN, (hInch - 0.75) * IN, zPos);
+          grp.add(insert);
+        });
+
+        // Knockdown Side-Rail Joints: M6 Allen Bolt + Washer on outer leg face + alignment dowel socket
+        [topRailY, botRailY].forEach(ry => {
+          const kBolt = createAllenBolt(2.8, 0.14, 'longRail');
+          if (sign > 0) kBolt.rotation.y = Math.PI;
+          const boltBaseX = xPos + sign * (LEG_W / 2 + 0.02) * IN;
+          kBolt.position.set(boltBaseX, ry + 0.24 * IN, zPos);
+          kBolt.userData.baseX = boltBaseX;
+          kBolt.userData.signX = sign;
+          cornerPostBolts.push(kBolt);
+          grp.add(kBolt);
+
+          // Dark alignment dowel socket on inner face of leg
+          const dHole = makePart(new THREE.CylinderGeometry(0.16 * IN, 0.16 * IN, 0.08 * IN, 10), holeMat, 'post');
+          dHole.rotation.z = Math.PI / 2;
+          dHole.position.set(xPos - sign * (LEG_W / 2 - 0.01) * IN, ry - 0.34 * IN, zPos);
+          grp.add(dHole);
+        });
+      });
+
+      // Top & Bottom Short End Rails (softly rounded)
+      [topRailY, botRailY].forEach(ry => {
+        const railGeo = createRoundedBoxGeo(RAIL_T * IN, RAIL_H * IN, INNER_W * IN, 0.24 * IN);
+        const rail = makePart(railGeo, woodRailMat, 'shortRail');
+        rail.position.set(xPos, ry, 0);
+        grp.add(rail);
+      });
+
+      // Flanged Steel Lock-Pin Receiver Bushing in center of Bottom Short End Rail (for Option 2 Glider Lock)
+      const railLockBushing = makePart(new THREE.CylinderGeometry(0.32 * IN, 0.32 * IN, (RAIL_T + 0.08) * IN, 14), steelMat, 'gliderLock');
+      railLockBushing.rotation.z = Math.PI / 2;
+      railLockBushing.position.set(xPos, botRailY, 0);
+      grp.add(railLockBushing);
+
+      // 9 Round Wooden Dowel Spindles (19mm / 0.75" dia, strict 1.75" clear gap!)
+      const numSpindles = 9;
+      const spDia = 0.75;
+      const gap = (INNER_W - numSpindles * spDia) / (numSpindles + 1);
+      for (let i = 0; i < numSpindles; i++) {
+        const z = (-INNER_W / 2 + gap * (i + 1) + spDia * (i + 0.5)) * IN;
+        const spindle = makePart(new THREE.CylinderGeometry((spDia / 2) * IN, (spDia / 2) * IN, spindleLen, 14), dowelMat, 'spindle');
+        spindle.position.set(xPos, spindleCenterY, z);
+        grp.add(spindle);
+      }
+
+      return grp;
+    }
+
+    function buildLongPanel(zPos, topRailY, botRailY, spindleLen, spindleCenterY) {
+      const grp = new THREE.Group();
+
+      // Top & Bottom Long Side Rails + Fluted Alignment Dowels + Brass Barrel Nuts
+      [topRailY, botRailY].forEach(ry => {
+        const railGeo = createRoundedBoxGeo(INNER_L * IN, RAIL_H * IN, RAIL_T * IN, 0.24 * IN);
+        const rail = makePart(railGeo, woodRailMat, 'longRail');
+        rail.position.set(0, ry, zPos);
+        grp.add(rail);
+
+        [-1, 1].forEach(sx => {
+          const endX = sx * (INNER_L / 2) * IN;
+
+          // Fluted wooden alignment dowel protruding into corner leg
+          const dowel = makePart(new THREE.CylinderGeometry(0.15 * IN, 0.15 * IN, 1.35 * IN, 10), dowelMat, 'longRail');
+          dowel.rotation.z = Math.PI / 2;
+          dowel.position.set(endX + sx * 0.25 * IN, ry - 0.34 * IN, zPos);
+          grp.add(dowel);
+
+          // Brass Barrel Nut (Cross-Dowel) recessed inside rail to receive M6 Allen bolt
+          const barrel = makePart(new THREE.CylinderGeometry(0.22 * IN, 0.22 * IN, 0.9 * IN, 12), brassMat, 'longRail');
+          barrel.position.set(endX - sx * 0.95 * IN, ry + 0.24 * IN, zPos);
+          grp.add(barrel);
+
+          // Cross-bore hole on underside of rail for inserting barrel nut
+          const bHole = makePart(new THREE.CylinderGeometry(0.23 * IN, 0.23 * IN, 0.08 * IN, 12), holeMat, 'longRail');
+          bHole.position.set(endX - sx * 0.95 * IN, ry - 0.84 * IN, zPos);
+          grp.add(bHole);
+        });
+      });
+
+      // 17 Round Wooden Dowel Spindles (19mm / 0.75" dia, strict 1.97" clear gap!)
+      const numSpindles = 17;
+      const spDia = 0.75;
+      const gap = (INNER_L - numSpindles * spDia) / (numSpindles + 1);
+      for (let i = 0; i < numSpindles; i++) {
+        const x = (-INNER_L / 2 + gap * (i + 1) + spDia * (i + 0.5)) * IN;
+        const spindle = makePart(new THREE.CylinderGeometry((spDia / 2) * IN, (spDia / 2) * IN, spindleLen, 14), dowelMat, 'spindle');
+        spindle.position.set(x, spindleCenterY, zPos);
+        grp.add(spindle);
+      }
+
+      return grp;
+    }
+
+    function initThree() {
+      const container = document.getElementById('canvas-container');
+      scene = new THREE.Scene();
+
+      camera = new THREE.PerspectiveCamera(36, container.clientWidth / container.clientHeight, 0.05, 30);
+      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.setSize(container.clientWidth, container.clientHeight);
+      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+      container.appendChild(renderer.domElement);
+
+      // Soft Scandinavian Studio Lighting
+      scene.add(new THREE.HemisphereLight(0xffffff, 0xe7e5e4, 0.98));
+
+      const keyLight = new THREE.DirectionalLight(0xfffbeb, 0.85);
+      keyLight.position.set(2.8, 4.5, 3.2);
+      keyLight.castShadow = true;
+      keyLight.shadow.mapSize.width = 1024;
+      keyLight.shadow.mapSize.height = 1024;
+      keyLight.shadow.camera.left = -1.8;
+      keyLight.shadow.camera.right = 1.8;
+      keyLight.shadow.camera.top = 1.8;
+      keyLight.shadow.camera.bottom = -1.8;
+      keyLight.shadow.bias = -0.001;
+      scene.add(keyLight);
+
+      const rimLight = new THREE.DirectionalLight(0xfef3c7, 0.32);
+      rimLight.position.set(-2.5, 2.0, -2.5);
+      scene.add(rimLight);
+
+      // Clean shadow-only floor
+      const floor = new THREE.Mesh(
+        new THREE.PlaneGeometry(10, 10),
+        new THREE.ShadowMaterial({ opacity: 0.13 })
+      );
+      floor.rotation.x = -Math.PI / 2;
+      floor.receiveShadow = true;
+      scene.add(floor);
+
+      buildModel();
+
+      raycaster = new THREE.Raycaster();
+      pointer = new THREE.Vector2();
+      bindEvents(renderer.domElement);
+      window.addEventListener('resize', onResize);
+    }
+
+    // =========================================================================
+    // 4. INTERACTIVE CONTROLS (OPTION 1 vs 2, EXPLODE, MOTION, STAGE, XRAY, DIMS)
+    // =========================================================================
+    function setDesignOption(opt) {
+      state.designOption = opt;
+      state.motionPhase = 0;
+
+      // Update top switcher pill styling
+      const b1 = document.getElementById('opt-btn-1');
+      const b2 = document.getElementById('opt-btn-2');
+      b1.className = opt === 1
+        ? 'px-3 py-1 rounded-full text-[11px] font-bold bg-stone-900 text-white shadow-xs transition'
+        : 'px-3 py-1 rounded-full text-[11px] font-bold text-stone-600 transition';
+      b2.className = opt === 2
+        ? 'px-3 py-1 rounded-full text-[11px] font-bold bg-stone-900 text-white shadow-xs transition'
+        : 'px-3 py-1 rounded-full text-[11px] font-bold text-stone-600 transition';
+
+      // Toggle 3D option assemblies
+      if (gliderSystemGroup) gliderSystemGroup.visible = (opt === 2);
+
+      // Update Carpenter Guide rows & headers
+      document.querySelectorAll('.opt1-row').forEach(el => el.classList.toggle('hidden', opt !== 1));
+      document.querySelectorAll('.opt2-row').forEach(el => el.classList.toggle('hidden', opt !== 2));
+
+      const gTitle = document.getElementById('guide-title');
+      const gSub = document.getElementById('guide-subtitle');
+      const cSum = document.getElementById('cutlist-summary');
+      if (opt === 1) {
+        gTitle.textContent = 'Option 1: Bolt-On Rocker Crib — Blueprint';
+        gSub.textContent = '48" × 24" × 4" Mattress • Detachable Rocker Arcs + Round Dowels • Inches & Feet';
+        cSum.innerHTML = '<strong>Mattress Size:</strong> 4 ft × 2 ft × 4" (48" × 24" × 4")<br/><strong>Outer Crib Size:</strong> 4 ft 3.75" L × 2 ft 3.75" W × 2 ft 10.5" H <span class="text-amber-800">(+2" with Rockers)</span>';
+      } else {
+        gTitle.textContent = 'Option 2: Horizontal Glider Crib — Blueprint';
+        gSub.textContent = '48" × 24" × 4" Mattress • 4 Steel Flat-Bar Links + Lock Pin • Inches & Feet';
+        cSum.innerHTML = '<strong>Mattress Size:</strong> 4 ft × 2 ft × 4" (48" × 24" × 4")<br/><strong>Outer Footprint (Glider Base):</strong> 4 ft 8" L × 2 ft 7" W × 3 ft H';
+      }
+
+      updateMotionUI();
+    }
+
+    function setExplode(val) {
+      state.explode = parseFloat(val) / 100;
+      document.getElementById('explode-label').textContent =
+        val == 0 ? 'Slide to Inspect Joints (0%)' : `Disassembled (${val}%)`;
+      if (dimsGroup) dimsGroup.visible = state.showDims && state.explode < 0.15;
+    }
+
+    function toggleMotion() {
+      if (state.stage !== 1 && !state.motionOn) {
+        state.stage = 1;
+        updateStageUI();
+      }
+      state.motionOn = !state.motionOn;
+      updateMotionUI();
+    }
+
+    function updateMotionUI() {
+      const btn = document.getElementById('btn-rock');
+      const icon = document.getElementById('icon-rock');
+      const txt = document.getElementById('txt-rock');
+
+      if (rockerLeft && rockerRight) {
+        const showRockers = (state.designOption === 1 && state.motionOn);
+        rockerLeft.visible = showRockers;
+        rockerRight.visible = showRockers;
+      }
+
+      if (state.designOption === 1) {
+        if (state.motionOn) {
+          btn.className = 'py-2 px-1.5 rounded-2xl bg-amber-600 text-white text-[11px] font-bold flex flex-col items-center justify-center gap-0.5 shadow-sm active:scale-95 transition';
+          icon.textContent = '〰️';
+          txt.textContent = 'Rockers ON';
+        } else {
+          btn.className = 'py-2 px-1.5 rounded-2xl bg-emerald-50 border border-emerald-300 text-emerald-900 text-[11px] font-bold flex flex-col items-center justify-center gap-0.5 active:scale-95 transition';
+          icon.textContent = '🛋️';
+          txt.textContent = 'Flat 4-Leg';
+        }
+      } else {
+        if (state.motionOn) {
+          btn.className = 'py-2 px-1.5 rounded-2xl bg-amber-600 text-white text-[11px] font-bold flex flex-col items-center justify-center gap-0.5 shadow-sm active:scale-95 transition';
+          icon.textContent = '↔️';
+          txt.textContent = 'Glide ON';
+        } else {
+          btn.className = 'py-2 px-1.5 rounded-2xl bg-emerald-50 border border-emerald-300 text-emerald-900 text-[11px] font-bold flex flex-col items-center justify-center gap-0.5 active:scale-95 transition';
+          icon.textContent = '🔒';
+          txt.textContent = 'Pin Locked';
+        }
+      }
+    }
+
+    function cycleStage() {
+      state.stage = (state.stage % 3) + 1;
+      // Automatically lock glider / remove bolt-on rockers for Stage 2 (Standing) & Stage 3 (Toddler/Co-Sleeper)
+      state.motionOn = (state.stage === 1);
+      updateStageUI();
+      updateMotionUI();
+    }
+
+    function updateStageUI() {
+      const txt = document.getElementById('txt-stage');
+      if (state.stage === 1) {
+        txt.textContent = '2–5m High';
+        frontPanel.visible = true;
+        toddlerBarGroup.visible = false;
+      } else if (state.stage === 2) {
+        txt.textContent = '6–24m Deep';
+        frontPanel.visible = true;
+        toddlerBarGroup.visible = false;
+      } else {
+        txt.textContent = 'Toddler Bed';
+        frontPanel.visible = false;
+        toddlerBarGroup.visible = true;
+      }
+    }
+
+    function toggleXray() {
+      state.xray = !state.xray;
+      const btn = document.getElementById('btn-xray');
+      [woodMat, woodRailMat, dowelMat].forEach(m => {
+        m.opacity = state.xray ? 0.32 : 1.0;
+        m.depthWrite = !state.xray;
+      });
+      if (state.xray) {
+        btn.className = 'py-2 px-1.5 rounded-2xl bg-amber-50 border border-amber-300 text-amber-900 text-[11px] font-bold flex flex-col items-center justify-center gap-0.5 active:scale-95 transition';
+      } else {
+        btn.className = 'py-2 px-1.5 rounded-2xl bg-stone-100 text-stone-800 text-[11px] font-bold flex flex-col items-center justify-center gap-0.5 active:scale-95 transition';
+      }
+    }
+
+    function toggleDims() {
+      state.showDims = !state.showDims;
+      if (dimsGroup) dimsGroup.visible = state.showDims && state.explode < 0.15;
+      const btn = document.getElementById('btn-dims');
+      if (state.showDims) {
+        btn.className = 'py-2 px-1.5 rounded-2xl bg-amber-50 border border-amber-300 text-amber-900 text-[11px] font-bold flex flex-col items-center justify-center gap-0.5 active:scale-95 transition';
+      } else {
+        btn.className = 'py-2 px-1.5 rounded-2xl bg-stone-100 text-stone-800 text-[11px] font-bold flex flex-col items-center justify-center gap-0.5 active:scale-95 transition';
+      }
+    }
+
+    function bindEvents(dom) {
+      // Mouse Orbit & Zoom
+      dom.addEventListener('mousedown', e => {
+        camOrbit.isDragging = true;
+        camOrbit.dragMoved = false;
+        camOrbit.prevX = e.clientX;
+        camOrbit.prevY = e.clientY;
+      });
+
+      window.addEventListener('mousemove', e => {
+        if (!camOrbit.isDragging) return;
+        const dx = e.clientX - camOrbit.prevX;
+        const dy = e.clientY - camOrbit.prevY;
+        if (Math.abs(dx) > 3 || Math.abs(dy) > 3) camOrbit.dragMoved = true;
+        camOrbit.desiredTheta -= dx * 0.008;
+        camOrbit.desiredPhi = Math.max(0.18, Math.min(Math.PI * 0.48, camOrbit.desiredPhi - dy * 0.008));
+        camOrbit.prevX = e.clientX;
+        camOrbit.prevY = e.clientY;
+      });
+
+      window.addEventListener('mouseup', e => {
+        if (camOrbit.isDragging && !camOrbit.dragMoved) {
+          handleTap(e.clientX, e.clientY);
+        }
+        camOrbit.isDragging = false;
+      });
+
+      dom.addEventListener('wheel', e => {
+        e.preventDefault();
+        camOrbit.desiredRadius = Math.max(36 * IN, Math.min(155 * IN, camOrbit.desiredRadius + e.deltaY * 0.002));
+      }, { passive: false });
+
+      // Touch Orbit, Pinch-to-Zoom & Tap-to-Inspect
+      dom.addEventListener('touchstart', e => {
+        if (e.touches.length === 1) {
+          camOrbit.isDragging = true;
+          camOrbit.dragMoved = false;
+          camOrbit.prevX = e.touches[0].clientX;
+          camOrbit.prevY = e.touches[0].clientY;
+        } else if (e.touches.length === 2) {
+          camOrbit.isDragging = false;
+          camOrbit.pinchDist = Math.hypot(
+            e.touches[0].clientX - e.touches[1].clientX,
+            e.touches[0].clientY - e.touches[1].clientY
+          );
+        }
+      }, { passive: true });
+
+      dom.addEventListener('touchend', e => {
+        if (!camOrbit.dragMoved && e.changedTouches.length === 1) {
+          handleTap(e.changedTouches[0].clientX, e.changedTouches[0].clientY);
+        }
+        camOrbit.isDragging = false;
+      });
+    }
+
+    function handleTap(clientX, clientY) {
+      const rect = renderer.domElement.getBoundingClientRect();
+      pointer.x = ((clientX - rect.left) / rect.width) * 2 - 1;
+      pointer.y = -((clientY - rect.top) / rect.height) * 2 + 1;
+
+      raycaster.setFromCamera(pointer, camera);
+      const visible = interactiveMeshes.filter(m => {
+        let o = m;
+        while (o) { if (!o.visible) return false; o = o.parent; }
+        return true;
+      });
+      const hits = raycaster.intersectObjects(visible, false);
+
+      clearHighlight();
+      if (hits.length > 0) {
+        const key = hits[0].object.userData.partKey;
+        const info = PART_INFO[key];
+        if (info) {
+          const hlMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b, emissive: 0x92400e, emissiveIntensity: 0.25, roughness: 0.4 });
+          visible.forEach(m => {
+            if (m.userData.partKey === key) {
+              m.material = hlMat;
+              highlightedMeshes.push(m);
+            }
+          });
+          document.getElementById('toast-code').textContent = info.code;
+          document.getElementById('toast-dims').textContent = info.dims;
+          document.getElementById('toast-name').textContent = info.name;
+          document.getElementById('toast-note').textContent = info.note;
+          document.getElementById('part-toast').style.opacity = '1';
+        }
+      } else {
+        dismissToast();
+      }
+    }
+
+    function clearHighlight() {
+      highlightedMeshes.forEach(m => { m.material = m.userData.origMat; });
+      highlightedMeshes = [];
+    }
+
+    function dismissToast() {
+      clearHighlight();
+      document.getElementById('part-toast').style.opacity = '0';
+    }
+
+    function resetCamera() {
+      camOrbit.desiredTheta = Math.PI * 0.22;
+      camOrbit.desiredPhi = Math.PI * 0.37;
+      camOrbit.desiredRadius = window.innerWidth < 640 ? 104 * IN : 86 * IN;
+      camOrbit.desiredTarget.set(0, 18.5 * IN, 0);
+    }
+
+    function onResize() {
+      const c = document.getElementById('canvas-container');
+      camera.aspect = c.clientWidth / c.clientHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(c.clientWidth, c.clientHeight);
+    }
+
+    // =========================================================================
+    // 5. ANIMATION LOOP (OPTION 1 ROCKING / OPTION 2 LEVEL HORIZONTAL GLIDING)
+    // =========================================================================
+    function animate() {
+      requestAnimationFrame(animate);
+      const e = state.explode;
+
+      // 1. Motion physics based on selected Design Option
+      if (state.designOption === 1) {
+        // OPTION 1: Rolling motion on 88" circular rocker arc
+        const targetBaseElevation = (state.motionOn ? ROCKER_H : 0) * IN + e * 5 * IN;
+        if (state.motionOn && e < 0.05) {
+          state.motionPhase += 0.026;
+          const targetAngle = Math.sin(state.motionPhase) * 0.088; // Gentle anti-tip ~5° rock
+          cribRoot.rotation.x += (targetAngle - cribRoot.rotation.x) * 0.12;
+          const targetZ = Math.sin(cribRoot.rotation.x) * (ROCKER_R * 0.45) * IN;
+          cribRoot.position.z += (targetZ - cribRoot.position.z) * 0.15;
+        } else {
+          cribRoot.rotation.x += (0 - cribRoot.rotation.x) * 0.15;
+          cribRoot.position.z += (0 - cribRoot.position.z) * 0.15;
+        }
+        cribRoot.position.y += (targetBaseElevation - cribRoot.position.y) * 0.12;
+      } else {
+        // OPTION 2: True 4-Bar Parallelogram Horizontal Glide (0° tilt!)
+        let linkAngle = 0;
+        if (state.motionOn && e < 0.05) {
+          state.motionPhase += 0.032;
+          linkAngle = Math.sin(state.motionPhase) * 0.28; // ±16° smooth pendulum glide
+        }
+        const glideZ = Math.sin(linkAngle) * GLIDER_LINK_L * IN;
+        const glideLiftY = (1 - Math.cos(linkAngle)) * GLIDER_LINK_L * IN;
+
+        cribRoot.rotation.x += (0 - cribRoot.rotation.x) * 0.18; // Always 100% level!
+        cribRoot.position.z += (glideZ - cribRoot.position.z) * 0.18;
+        cribRoot.position.y += ((GLIDER_REST_Y * IN + glideLiftY + e * 6 * IN) - cribRoot.position.y) * 0.14;
+
+        // Rotate all 4 steel flat-bar links in perfect sync with the crib's horizontal glide
+        gliderLinkPivots.forEach(piv => {
+          piv.rotation.x += (-linkAngle - piv.rotation.x) * 0.18;
+          const targetX = piv.userData.baseX + piv.userData.signX * e * 3.5 * IN;
+          piv.position.x += (targetX - piv.position.x) * 0.12;
+        });
+
+        // Stationary Glider Base exploded translations
+        gliderBaseLeft.position.x += (-e * 11 * IN - gliderBaseLeft.position.x) * 0.12;
+        gliderBaseRight.position.x += (e * 11 * IN - gliderBaseRight.position.x) * 0.12;
+        gliderStretchers.position.y += (-e * 4.5 * IN - gliderStretchers.position.y) * 0.12;
+
+        // Glider Safety Lock Pins: slide IN to lock crib rail when locked, retract OUT when gliding or exploded
+        gliderLockPins.forEach(pin => {
+          const isLocked = !state.motionOn && e < 0.05;
+          const lockOffset = isLocked ? -pin.userData.signX * 1.15 * IN : pin.userData.signX * 0.75 * IN;
+          const targetX = pin.userData.baseX + lockOffset + pin.userData.signX * e * 3.0 * IN;
+          pin.position.x += (targetX - pin.position.x) * 0.16;
+        });
+
+        // Glider Pivot Bolts back out along X when exploded
+        gliderPivotBolts.forEach(bolt => {
+          const targetX = bolt.userData.baseX + bolt.userData.signX * e * 2.5 * IN;
+          bolt.position.x += (targetX - bolt.position.x) * 0.14;
+        });
+      }
+
+      // 2. Exploded View translations (every piece & bolt separates cleanly)
+      headEnd.position.x += (-e * 10 * IN - headEnd.position.x) * 0.12;
+      footEnd.position.x += (e * 10 * IN - footEnd.position.x) * 0.12;
+      backPanel.position.z += (-e * 11 * IN - backPanel.position.z) * 0.12;
+      frontPanel.position.z += (e * 11 * IN - frontPanel.position.z) * 0.12;
+      toddlerBarGroup.position.z += (e * 11 * IN - toddlerBarGroup.position.z) * 0.12;
+
+      // Detachable Rocker Arcs drop straight down below the legs when exploded
+      rockerLeft.position.x += (-e * 10 * IN - rockerLeft.position.x) * 0.12;
+      rockerRight.position.x += (e * 10 * IN - rockerRight.position.x) * 0.12;
+      rockerLeft.position.y += (-e * 5.5 * IN - rockerLeft.position.y) * 0.12;
+      rockerRight.position.y += (-e * 5.5 * IN - rockerRight.position.y) * 0.12;
+
+      // Mattress base height (Stage 1 = 18.5" from leg bottom, Stage 2/3 = 6.5" -> 24" standing guard!)
+      const baseHeightInch = state.stage === 1 ? 18.5 : 6.5;
+      const targetBaseY = baseHeightInch * IN + e * 7.5 * IN;
+      baseGroup.position.y += (targetBaseY - baseGroup.position.y) * 0.12;
+      mattressMesh.position.y += (2.0 * IN + e * 10 * IN - mattressMesh.position.y) * 0.12;
+
+      // Hardware bolts back out cleanly along their thread axes when exploded
+      baseCornerBolts.forEach(bolt => {
+        const targetX = bolt.userData.baseX - bolt.userData.signX * e * 2.2 * IN;
+        bolt.position.x += (targetX - bolt.position.x) * 0.14;
+      });
+      cornerPostBolts.forEach(bolt => {
+        const targetX = bolt.userData.baseX + bolt.userData.signX * e * 3.0 * IN;
+        bolt.position.x += (targetX - bolt.position.x) * 0.14;
+      });
+      rockerBolts.forEach(bolt => {
+        const targetY = bolt.userData.baseY - e * 2.8 * IN;
+        bolt.position.y += (targetY - bolt.position.y) * 0.14;
+      });
+
+      // 3. Smooth Camera Orbit
+      camOrbit.theta += (camOrbit.desiredTheta - camOrbit.theta) * 0.12;
+      camOrbit.phi += (camOrbit.desiredPhi - camOrbit.phi) * 0.12;
+      camOrbit.radius += (camOrbit.desiredRadius - camOrbit.radius) * 0.12;
+      camOrbit.target.lerp(camOrbit.desiredTarget, 0.12);
+
+      camera.position.x = camOrbit.target.x + camOrbit.radius * Math.sin(camOrbit.phi) * Math.sin(camOrbit.theta);
+      camera.position.y = camOrbit.target.y + camOrbit.radius * Math.cos(camOrbit.phi);
+      camera.position.z = camOrbit.target.z + camOrbit.radius * Math.sin(camOrbit.phi) * Math.cos(camOrbit.theta);
+      camera.lookAt(camOrbit.target);
+
+      renderer.render(scene, camera);
+    }
+
+    // =========================================================================
+    // 6. CARPENTER GUIDE BOTTOM SHEET & CHECKLIST
+    // =========================================================================
+    function openGuide(tab) {
+      document.getElementById('guide-backdrop').classList.remove('hidden');
+      const sheet = document.getElementById('guide-sheet');
+      sheet.classList.remove('sheet-closed');
+      sheet.classList.add('sheet-open');
+      if (tab) switchGuideTab(tab);
+    }
+
+    function closeGuide() {
+      document.getElementById('guide-backdrop').classList.add('hidden');
+      const sheet = document.getElementById('guide-sheet');
+      sheet.classList.remove('sheet-open');
+      sheet.classList.add('sheet-closed');
+    }
+
+    function switchGuideTab(tab) {
+      ['cutlist', 'ikea', 'safety'].forEach(t => {
+        document.getElementById(`gview-${t}`).classList.toggle('hidden', t !== tab);
+        const btn = document.getElementById(`stab-${t}`);
+        btn.className = t === tab
+          ? 'flex-1 py-2 rounded-xl text-xs font-bold bg-stone-900 text-white transition'
+          : 'flex-1 py-2 rounded-xl text-xs font-bold bg-stone-100 text-stone-700 transition';
+      });
+    }
+
+    function renderChecklist() {
+      const box = document.getElementById('checklist-items');
+      box.innerHTML = '';
+      SAFETY_ITEMS.forEach((item, i) => {
+        const el = document.createElement('label');
+        el.className = 'flex items-start gap-3 p-3 rounded-xl border border-stone-200 bg-white cursor-pointer';
+        el.innerHTML = `
+          <input type="checkbox" onchange="updateSafetyScore()" class="safety-cb mt-0.5 w-4 h-4 accent-emerald-600" />
+          <div>
+            <p class="text-xs font-bold text-stone-900">${i + 1}. ${item.title}</p>
+            <p class="text-[11px] text-stone-600 mt-0.5 leading-snug">${item.desc}</p>
+          </div>`;
+        box.appendChild(el);
+      });
+    }
+
+    function updateSafetyScore() {
+      const cbs = document.querySelectorAll('.safety-cb');
+      const done = Array.from(cbs).filter(c => c.checked).length;
+      const badge = document.getElementById('safety-score');
+      badge.textContent = done === cbs.length ? '✅ All 7 Passed!' : `${done} / ${cbs.length} Done`;
+    }
+
+    function copyCutList() {
+      const textOpt1 = `OPTION 1: MINIMALIST 4-LEG ROCKER CRIB CUT LIST (48" x 24" x 4" Mattress)
+Wood: Seasoned Teak / Beech / Rubberwood (NO Plywood, NO PU/Melamine)
+Finish: Beeswax + Mineral Oil or Water-based Zero-VOC Matte
+
+WOOD CUT LIST (INCHES):
+- R. Bolt-On Rocker Arcs x 2: 32" x 2.5" x 1.75" (Gentle 88" curve + flat stop-ends)
+- A. Corner Legs x 4: 34.5" x 1.75" x 1.75" (Softly round all edges; inserts at 6.5", 12.5", 18.5" H + leg bottom)
+- B. Long Side Rails x 4: 48.25" x 1.75" x 1.25" (Rounded top edges)
+- C. Short End Rails x 4: 24.25" x 1.75" x 1.25"
+- D. Round Dowel Spindles x 52: 27" x 0.75" Dia / 19mm (17 per long side = 1.97" gap, 9 per end = 1.75" gap)
+- E. Mattress Base Frame: 48" x 24" with 10 airflow slats (2" wide) on inner ledger cleats
+- F. Toddler / Co-Sleeper Front Bar x 1: 48.25" x 1.75" x 1.25"
+
+SIMPLE HARDWARE (NO BEARINGS NEEDED):
+- 4x M8x75mm SS Allen Bolts + Washers + 4x M8 Brass Inserts (for detachable rockers)
+- 8x M6x75mm SS Allen Bolts + Brass Barrel Nuts + 8x 10mm Wood Dowels (for side rails)
+- 4x Heavy Steel L-Brackets + 4x M6x35mm Allen Bolts + 12x M6 Brass Inserts (for 3 mattress heights)`;
+
+      const textOpt2 = `OPTION 2: HORIZONTAL GLIDER CRIB CUT LIST (48" x 24" x 4" Mattress)
+Wood: Seasoned Teak / Beech / Rubberwood (NO Plywood, NO PU/Melamine)
+Finish: Beeswax + Mineral Oil or Water-based Zero-VOC Matte
+
+GLIDER BASE & LINKS (ZERO TILT HORIZONTAL SWING):
+- G1. Base Side Runners x 2: 31" x 2" x 1.5" (with rubber floor pads)
+- G2. Low Base Risers x 4 & Tie-Bars x 2: 6"x1.5"x1.5" & 27.5"x1.5"x1.5" (total base height 8.2")
+- G3. Floor Stretchers x 2: 52.9" x 1.75" x 1.25" (connects left & right base frames)
+- G4. Steel Flat-Bar Links (Patti) x 4: 5.7" x 1.1" x 5mm thick (8.5mm holes spaced EXACTLY 4.5" center-to-center)
+
+CRIB BODY CUT LIST (INCHES):
+- A. Corner Legs x 4: 34.5" x 1.75" x 1.75" (Inserts at 6.5", 12.5", 18.5" H + outer M8 insert at 1.25" H for link)
+- B. Long Side Rails x 4: 48.25" x 1.75" x 1.25" (Rounded top edges)
+- C. Short End Rails x 4: 24.25" x 1.75" x 1.25" (Center lock-pin bushing in bottom end rails)
+- D. Round Dowel Spindles x 52: 27" x 0.75" Dia / 19mm (17 per long side = 1.97" gap, 9 per end = 1.75" gap)
+- E. Mattress Base Frame: 48" x 24" with 10 airflow slats (2" wide) on inner ledger cleats
+- F. Toddler / Co-Sleeper Front Bar x 1: 48.25" x 1.75" x 1.25"
+
+SIMPLE HARDWARE (LOCAL HARDWARE SHOP):
+- 8x M8x65mm SS Bolts + 16x Nylon Spacer Washers + 8x Nyloc Locknuts (for 4 steel glider links)
+- 2x 10mm Sliding Steel Lock Pins + Flanged Bushings (to lock glider rigid at 5+ months)
+- 8x M6x75mm SS Allen Bolts + Brass Barrel Nuts + 8x 10mm Wood Dowels (for side rails)
+- 4x Heavy Steel L-Brackets + 4x M6x35mm Allen Bolts + 12x M6 Brass Inserts (for 3 mattress heights)`;
+
+      const ta = document.createElement('textarea');
+      ta.value = state.designOption === 1 ? textOpt1 : textOpt2;
+      document.body.appendChild(ta);
+      ta.select();
+      try {
+        document.execCommand('copy');
+        const toast = document.getElementById('copy-toast');
+        toast.classList.remove('hidden');
+        setTimeout(() => toast.classList.add('hidden'), 3000);
+      } catch (err) {
+        console.error('Copy failed', err);
+      }
+      document.body.removeChild(ta);
+    }
+
+    window.onload = function () {
+      initThree();
+      setDesignOption(2);
+      resetCamera();
+      renderChecklist();
+      animate();
+    };
+  </script>
+</body>
+</html>

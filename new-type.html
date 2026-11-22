@@ -145,7 +145,7 @@
   </div>
 
   <!-- COMPACT TAP-TO-INSPECT TOAST (Never blocks the model) -->
-  <div id="part-toast" class="fixed top-24 left-3 right-3 z-20 flex justify-center pointer-events-none opacity-0 transition-opacity duration-200">
+  <div id="part-toast" class="fixed top-24 left-3 right-3 z-20 flex justify-center pointer-events-none opacity-0 transition-opacity duration-200 hidden">
     <div class="pointer-events-auto max-w-sm w-full bg-white/92 backdrop-blur-md border border-amber-300 rounded-2xl px-3.5 py-2.5 shadow-md flex items-start justify-between gap-2">
       <div class="min-w-0">
         <div class="flex items-center gap-1.5">
@@ -1455,6 +1455,7 @@
           camOrbit.prevY = e.touches[0].clientY;
         } else if (e.touches.length === 2) {
           camOrbit.isDragging = false;
+          camOrbit.dragMoved = true;
           camOrbit.pinchDist = Math.hypot(
             e.touches[0].clientX - e.touches[1].clientX,
             e.touches[0].clientY - e.touches[1].clientY
@@ -1462,11 +1463,49 @@
         }
       }, { passive: true });
 
+      dom.addEventListener('touchmove', e => {
+        e.preventDefault();
+        if (e.touches.length === 1 && camOrbit.isDragging) {
+          const dx = e.touches[0].clientX - camOrbit.prevX;
+          const dy = e.touches[0].clientY - camOrbit.prevY;
+          if (Math.abs(dx) > 3 || Math.abs(dy) > 3) camOrbit.dragMoved = true;
+          camOrbit.desiredTheta -= dx * 0.009;
+          camOrbit.desiredPhi = Math.max(0.18, Math.min(Math.PI * 0.48, camOrbit.desiredPhi - dy * 0.009));
+          camOrbit.prevX = e.touches[0].clientX;
+          camOrbit.prevY = e.touches[0].clientY;
+        } else if (e.touches.length === 2) {
+          camOrbit.dragMoved = true;
+          const dist = Math.hypot(
+            e.touches[0].clientX - e.touches[1].clientX,
+            e.touches[0].clientY - e.touches[1].clientY
+          );
+          if (camOrbit.pinchDist > 0) {
+            const delta = camOrbit.pinchDist - dist;
+            camOrbit.desiredRadius = Math.max(36 * IN, Math.min(155 * IN, camOrbit.desiredRadius + delta * 0.007));
+          }
+          camOrbit.pinchDist = dist;
+        }
+      }, { passive: false });
+
       dom.addEventListener('touchend', e => {
+        if (e.touches.length === 1) {
+          // Smooth transition when lifting one finger after a 2-finger pinch
+          camOrbit.isDragging = true;
+          camOrbit.prevX = e.touches[0].clientX;
+          camOrbit.prevY = e.touches[0].clientY;
+          camOrbit.pinchDist = 0;
+          return;
+        }
         if (!camOrbit.dragMoved && e.changedTouches.length === 1) {
           handleTap(e.changedTouches[0].clientX, e.changedTouches[0].clientY);
         }
         camOrbit.isDragging = false;
+        camOrbit.pinchDist = 0;
+      });
+
+      dom.addEventListener('touchcancel', () => {
+        camOrbit.isDragging = false;
+        camOrbit.pinchDist = 0;
       });
     }
 
@@ -1499,7 +1538,9 @@
           document.getElementById('toast-dims').textContent = info.dims;
           document.getElementById('toast-name').textContent = info.name;
           document.getElementById('toast-note').textContent = info.note;
-          document.getElementById('part-toast').style.opacity = '1';
+          const toast = document.getElementById('part-toast');
+          toast.classList.remove('hidden');
+          requestAnimationFrame(() => { toast.style.opacity = '1'; });
         }
       } else {
         dismissToast();
@@ -1513,7 +1554,9 @@
 
     function dismissToast() {
       clearHighlight();
-      document.getElementById('part-toast').style.opacity = '0';
+      const toast = document.getElementById('part-toast');
+      toast.style.opacity = '0';
+      toast.classList.add('hidden');
     }
 
     function resetCamera() {

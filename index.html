@@ -1,0 +1,1545 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Nidra Safe Swing Crib (48" × 24" × 4") — 3D Blueprint</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Three.js r128 -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100dvh;
+      overflow: hidden;
+      font-family: 'Inter', sans-serif;
+      background: radial-gradient(circle at 50% 42%, #ffffff 0%, #f4f2ec 65%, #e7e4dc 100%);
+      color: #1c1917;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    #canvas-container {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    #canvas-container canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      touch-action: none;
+      cursor: grab;
+    }
+    #canvas-container canvas:active {
+      cursor: grabbing;
+    }
+
+    /* Sleek Google-style range slider */
+    input[type="range"] {
+      -webkit-appearance: none;
+      appearance: none;
+      background: rgba(120, 113, 108, 0.22);
+      height: 6px;
+      border-radius: 999px;
+      outline: none;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: #b45309;
+      cursor: pointer;
+      border: 3px solid #ffffff;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+    }
+    input[type="range"]::-moz-range-thumb {
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: #b45309;
+      cursor: pointer;
+      border: 3px solid #ffffff;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+    }
+
+    /* Bottom sheet smooth transition */
+    #guide-sheet {
+      transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .sheet-closed {
+      transform: translateY(105%);
+      pointer-events: none;
+    }
+    .sheet-open {
+      transform: translateY(0%);
+      pointer-events: auto;
+    }
+
+    @media print {
+      #canvas-container, #floating-top, #floating-bottom, #part-toast {
+        display: none !important;
+      }
+      html, body {
+        height: auto;
+        overflow: visible;
+        background: #ffffff;
+      }
+      #guide-sheet {
+        position: static !important;
+        transform: none !important;
+        max-height: none !important;
+        box-shadow: none !important;
+        border: none !important;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- FULL-SCREEN 3D VIEWPORT (Google 3D Animals Style) -->
+  <div id="canvas-container"></div>
+
+  <!-- MINIMAL FLOATING TOP BAR -->
+  <div id="floating-top" class="fixed top-3 left-3 right-3 z-20 flex items-center justify-between gap-2 pointer-events-none">
+    <div class="pointer-events-auto bg-white/80 backdrop-blur-md border border-stone-200/80 rounded-full px-3.5 py-2 shadow-sm flex items-center gap-2">
+      <span class="w-2.5 h-2.5 rounded-full bg-amber-600"></span>
+      <span class="text-xs sm:text-sm font-bold text-stone-800 tracking-tight">Nidra Swing Crib</span>
+      <span class="text-[11px] font-semibold text-stone-500 hidden xs:inline">48"×24"×4"</span>
+    </div>
+
+    <div class="pointer-events-auto flex items-center gap-1.5">
+      <button onclick="resetCamera()" title="Reset View" class="bg-white/80 backdrop-blur-md border border-stone-200/80 rounded-full w-9 h-9 flex items-center justify-center text-stone-700 shadow-sm active:scale-95 transition">
+        ↺
+      </button>
+      <button onclick="openGuide('cutlist')" class="bg-stone-900/90 backdrop-blur-md text-white rounded-full px-3.5 py-2 text-xs font-semibold shadow-sm active:scale-95 transition flex items-center gap-1.5">
+        <span>📋</span>
+        <span>Carpenter Guide</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- COMPACT TAP-TO-INSPECT TOAST (Never blocks the model) -->
+  <div id="part-toast" class="fixed top-16 left-3 right-3 z-20 flex justify-center pointer-events-none opacity-0 transition-opacity duration-200">
+    <div class="pointer-events-auto bg-stone-900/90 backdrop-blur-md text-white rounded-2xl px-4 py-2.5 shadow-lg max-w-sm w-full flex items-start justify-between gap-3">
+      <div class="min-w-0">
+        <div class="flex items-center gap-2">
+          <span id="toast-code" class="text-[10px] font-extrabold uppercase tracking-wider bg-amber-500 text-stone-950 px-1.5 py-0.5 rounded">PART</span>
+          <span id="toast-dims" class="text-xs font-bold text-amber-300 truncate">48" × 24"</span>
+        </div>
+        <p id="toast-name" class="text-xs font-semibold text-white mt-0.5 truncate">Part Name</p>
+        <p id="toast-note" class="text-[11px] text-stone-300 leading-snug mt-0.5">Carpenter instruction.</p>
+      </div>
+      <button onclick="dismissToast()" class="text-stone-400 hover:text-white text-sm font-bold px-1">✕</button>
+    </div>
+  </div>
+
+  <!-- MINIMAL FLOATING BOTTOM DOCK (Thumb-Friendly Mobile Controls) -->
+  <div id="floating-bottom" class="fixed bottom-3 left-3 right-3 z-20 flex justify-center pointer-events-none">
+    <div class="pointer-events-auto w-full max-w-md bg-white/82 backdrop-blur-lg border border-stone-200/90 rounded-3xl p-3 shadow-lg space-y-2.5">
+
+      <!-- Assembly / Disassembly Slider -->
+      <div class="px-1">
+        <div class="flex items-center justify-between text-[11px] font-bold text-stone-600 mb-1.5">
+          <span>Assembled</span>
+          <span id="explode-label" class="text-amber-800">Slide to Inspect Joints (0%)</span>
+          <span>Exploded</span>
+        </div>
+        <input id="explode-slider" type="range" min="0" max="100" value="0" class="w-full" oninput="setExplode(this.value)" />
+      </div>
+
+      <!-- 4 Compact Action Pills -->
+      <div class="grid grid-cols-4 gap-1.5">
+        <button id="btn-swing" onclick="toggleSwing()" class="py-2 px-1.5 rounded-2xl bg-amber-600 text-white text-[11px] font-bold flex flex-col items-center justify-center gap-0.5 shadow-sm active:scale-95 transition">
+          <span id="icon-swing" class="text-sm leading-none">〰️</span>
+          <span id="txt-swing">Swing ON</span>
+        </button>
+
+        <button id="btn-stage" onclick="cycleStage()" class="py-2 px-1.5 rounded-2xl bg-stone-100 text-stone-800 text-[11px] font-bold flex flex-col items-center justify-center gap-0.5 active:scale-95 transition">
+          <span class="text-sm leading-none">👶</span>
+          <span id="txt-stage">2–5m High</span>
+        </button>
+
+        <button id="btn-xray" onclick="toggleXray()" class="py-2 px-1.5 rounded-2xl bg-stone-100 text-stone-800 text-[11px] font-bold flex flex-col items-center justify-center gap-0.5 active:scale-95 transition">
+          <span class="text-sm leading-none">🔩</span>
+          <span>Joints</span>
+        </button>
+
+        <button id="btn-dims" onclick="toggleDims()" class="py-2 px-1.5 rounded-2xl bg-amber-50 border border-amber-300 text-amber-900 text-[11px] font-bold flex flex-col items-center justify-center gap-0.5 active:scale-95 transition">
+          <span class="text-sm leading-none">📏</span>
+          <span>Sizes</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SLIDE-UP CARPENTER GUIDE BOTTOM SHEET -->
+  <div id="guide-backdrop" onclick="closeGuide()" class="fixed inset-0 bg-stone-950/40 backdrop-blur-xs z-30 hidden"></div>
+  <div id="guide-sheet" class="sheet-closed fixed inset-x-0 bottom-0 z-40 bg-white rounded-t-3xl shadow-2xl max-h-[86dvh] flex flex-col max-w-3xl mx-auto border-t border-stone-200">
+    <!-- Sheet Drag Handle & Header -->
+    <div class="p-4 border-b border-stone-200 flex items-center justify-between gap-2 shrink-0">
+      <div>
+        <h2 class="text-base font-extrabold text-stone-900">Carpenter Blueprint &amp; Safety Guide</h2>
+        <p class="text-[11px] text-stone-500">For 48" × 24" × 4" (4ft × 2ft) Mattress • All sizes in Inches &amp; Feet</p>
+      </div>
+      <button onclick="closeGuide()" class="w-9 h-9 rounded-full bg-stone-100 text-stone-700 font-bold flex items-center justify-center hover:bg-stone-200">
+        ✕
+      </button>
+    </div>
+
+    <!-- Sheet Tabs -->
+    <div class="px-4 pt-3 flex gap-1.5 shrink-0">
+      <button id="stab-cutlist" onclick="switchGuideTab('cutlist')" class="flex-1 py-2 rounded-xl text-xs font-bold bg-stone-900 text-white transition">
+        Cut List (Inches)
+      </button>
+      <button id="stab-ikea" onclick="switchGuideTab('ikea')" class="flex-1 py-2 rounded-xl text-xs font-bold bg-stone-100 text-stone-700 transition">
+        Visual Joints
+      </button>
+      <button id="stab-safety" onclick="switchGuideTab('safety')" class="flex-1 py-2 rounded-xl text-xs font-bold bg-stone-100 text-stone-700 transition">
+        Safety Check
+      </button>
+    </div>
+
+    <!-- Scrollable Sheet Content -->
+    <div class="p-4 overflow-y-auto space-y-5 flex-1">
+
+      <!-- SUB-TAB 1: CUT LIST (INCHES & FEET) -->
+      <div id="gview-cutlist" class="space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-2 bg-amber-50 border border-amber-200 rounded-2xl p-3">
+          <p class="text-xs text-amber-950">
+            <strong>Mattress Size:</strong> 4 ft × 2 ft × 4" (48" × 24" × 4")<br/>
+            <strong>Outer Footprint:</strong> 4 ft 8" L × 2 ft 10" W × 3 ft 2" H
+          </p>
+          <button onclick="copyCutList()" class="px-3 py-2 bg-amber-700 text-white rounded-xl text-xs font-bold active:scale-95 transition">
+            📋 Copy for WhatsApp
+          </button>
+        </div>
+
+        <div id="copy-toast" class="hidden p-2.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold text-center">
+          ✅ Copied! Paste directly into WhatsApp for your carpenter.
+        </div>
+
+        <div class="overflow-x-auto border border-stone-200 rounded-2xl">
+          <table class="w-full text-left border-collapse text-xs">
+            <thead>
+              <tr class="bg-stone-100 text-stone-700 border-b border-stone-200">
+                <th class="p-2.5 font-bold">Part</th>
+                <th class="p-2.5 font-bold">Qty</th>
+                <th class="p-2.5 font-bold">Finished Size (Inches)</th>
+                <th class="p-2.5 font-bold">Carpenter Note</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-stone-200">
+              <tr class="bg-amber-50/40">
+                <td class="p-2.5 font-bold">S1. Outer Stand Pillar</td>
+                <td class="p-2.5 font-bold">2</td>
+                <td class="p-2.5 font-mono font-bold">37" × 3.5" × 1.75"</td>
+                <td class="p-2.5 text-stone-600">Holds 6201 bearing at 34" H + lock pin hole at 10" H.</td>
+              </tr>
+              <tr class="bg-amber-50/40">
+                <td class="p-2.5 font-bold">S2. Outer Stand Foot</td>
+                <td class="p-2.5 font-bold">2</td>
+                <td class="p-2.5 font-mono font-bold">34" × 2.5" × 1.75"</td>
+                <td class="p-2.5 text-stone-600">Wide anti-tip floor base (2ft 10"). Mortise to S1.</td>
+              </tr>
+              <tr class="bg-amber-50/40">
+                <td class="p-2.5 font-bold">S3. Bottom Stretcher</td>
+                <td class="p-2.5 font-bold">2</td>
+                <td class="p-2.5 font-mono font-bold">53.5" × 2" × 1.25"</td>
+                <td class="p-2.5 text-stone-600">Connects left &amp; right stands with M8 bolts.</td>
+              </tr>
+              <tr>
+                <td class="p-2.5 font-bold">A. Crib Corner Post</td>
+                <td class="p-2.5 font-bold">4</td>
+                <td class="p-2.5 font-mono font-bold">30" × 1.5" × 1.5"</td>
+                <td class="p-2.5 text-stone-600">Round all edges smoothly. Drill 3 mattress height holes.</td>
+              </tr>
+              <tr>
+                <td class="p-2.5 font-bold">B. Long Side Rails</td>
+                <td class="p-2.5 font-bold">4</td>
+                <td class="p-2.5 font-mono font-bold">48.25" × 1.5" × 1"</td>
+                <td class="p-2.5 text-stone-600">Bolts to Posts (A) using M6 Allen bolts + barrel nuts.</td>
+              </tr>
+              <tr>
+                <td class="p-2.5 font-bold">C. Short End Rails</td>
+                <td class="p-2.5 font-bold">4</td>
+                <td class="p-2.5 font-mono font-bold">24.25" × 1.5" × 1"</td>
+                <td class="p-2.5 text-stone-600">Add 1 thick center vertical post (2.5"×1.5") for pivot bolt.</td>
+              </tr>
+              <tr>
+                <td class="p-2.5 font-bold">D. Vertical Slats</td>
+                <td class="p-2.5 font-bold">42</td>
+                <td class="p-2.5 font-mono font-bold">28" × 1" × 0.75"</td>
+                <td class="p-2.5 text-stone-600"><strong>STRICT 2" CLEAR GAP MAX!</strong> Glue 0.5" deep into rails.</td>
+              </tr>
+              <tr>
+                <td class="p-2.5 font-bold">E. Mattress Base Frame</td>
+                <td class="p-2.5 font-bold">1 set</td>
+                <td class="p-2.5 font-mono font-bold">48" × 24" (10 slats)</td>
+                <td class="p-2.5 text-stone-600">10 slats (2" wide) spaced 2.75" apart for airflow.</td>
+              </tr>
+              <tr>
+                <td class="p-2.5 font-bold">F. Toddler Front Bar</td>
+                <td class="p-2.5 font-bold">1</td>
+                <td class="p-2.5 font-mono font-bold">48.25" × 1.5" × 1"</td>
+                <td class="p-2.5 text-stone-600">Replaces front rail after 18 months (with Lock Pin IN).</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="bg-stone-50 rounded-2xl border border-stone-200 p-3.5 text-xs space-y-2">
+          <h3 class="font-bold text-stone-900">🔩 Hardware &amp; Wood (Available in Any Indian Market)</h3>
+          <ul class="space-y-1 text-stone-700 list-disc pl-4">
+            <li><strong>Wood:</strong> Seasoned Teak (Sagwan), German Beech, or Rubberwood. <strong>NO Plywood/MDF.</strong></li>
+            <li><strong>Finish:</strong> Raw Beeswax + Mineral Oil OR Water-based Zero-VOC Matte (NO PU/Melamine).</li>
+            <li><strong>Swing Bearings:</strong> 2× <strong>6201 Ball Bearings</strong> + 2× <strong>12mm (1/2") SS Pivot Bolts</strong> + lock nuts.</li>
+            <li><strong>Safety Swing Lock Pins:</strong> 2× <strong>10mm Steel Locking Pins</strong> (or heavy door barrel-bolts) at bottom of stands.</li>
+            <li><strong>Knockdown Bolts:</strong> 12× M6×70mm SS Allen Bolts + Barrel Nuts + 4× M8×75mm Bolts for outer stand.</li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- SUB-TAB 2: IKEA-STYLE VISUAL DIAGRAMS -->
+      <div id="gview-ikea" class="hidden space-y-4">
+        <!-- Diagram 1: Safe Swing Bearing & Lock Pin -->
+        <div class="border-2 border-stone-200 rounded-2xl p-3.5">
+          <h3 class="text-xs font-extrabold text-stone-900 mb-2">1. Safe Pendulum Swing + Safety Lock Pin</h3>
+          <svg viewBox="0 0 380 210" class="w-full h-auto bg-stone-50 rounded-xl border border-stone-200">
+            <!-- Floor -->
+            <line x1="20" y1="190" x2="360" y2="190" stroke="#292524" stroke-width="3"/>
+            <!-- Outer Stand Pillar -->
+            <rect x="70" y="25" width="32" height="165" fill="#c79f6d" stroke="#292524" stroke-width="2" rx="3"/>
+            <!-- Outer Stand Foot -->
+            <rect x="42" y="172" width="88" height="18" fill="#b88d5a" stroke="#292524" stroke-width="2" rx="3"/>
+            <!-- Inner Crib Side -->
+            <rect x="130" y="35" width="160" height="125" fill="#f5e6cc" stroke="#292524" stroke-width="2" rx="3"/>
+            <!-- 6201 Bearing + Pivot Bolt at Top (34" H) -->
+            <circle cx="86" cy="52" r="11" fill="#9ca3af" stroke="#111827" stroke-width="2"/>
+            <rect x="86" y="48" width="60" height="8" fill="#4b5563" stroke="#111827" stroke-width="1.5"/>
+            <text x="210" y="56" font-size="11" font-weight="800" fill="#1f2937">6201 Bearing + 12mm Bolt (34" H)</text>
+            <!-- Swing Lock Pin at Bottom (10" H) -->
+            <rect x="52" y="138" width="96" height="10" rx="4" fill="#dc2626" stroke="#7f1d1d" stroke-width="1.8"/>
+            <circle cx="52" cy="143" r="8" fill="#ef4444" stroke="#7f1d1d" stroke-width="1.8"/>
+            <text x="215" y="147" font-size="11" font-weight="800" fill="#dc2626">LOCK PIN (10" H) — Slide IN to Stop Swing</text>
+            <!-- Gap clearance note -->
+            <text x="116" y="102" text-anchor="middle" font-size="10" font-weight="700" fill="#b45309">1.25" Gap</text>
+            <text x="210" y="182" text-anchor="middle" font-size="10" font-weight="700" fill="#059669">7" Floor Clearance Under Crib</text>
+          </svg>
+        </div>
+
+        <!-- Diagram 2: 2-Inch Slat Gap & 3 Mattress Heights -->
+        <div class="border-2 border-stone-200 rounded-2xl p-3.5">
+          <h3 class="text-xs font-extrabold text-stone-900 mb-2">2. Strict 2" Slat Gap &amp; Standing-Safe Depths</h3>
+          <svg viewBox="0 0 380 190" class="w-full h-auto bg-stone-50 rounded-xl border border-stone-200">
+            <!-- Crib Frame -->
+            <rect x="25" y="20" width="175" height="150" fill="none" stroke="#292524" stroke-width="5" rx="2"/>
+            <!-- Slats -->
+            <g fill="#e7d3b0" stroke="#292524" stroke-width="1.5">
+              <rect x="48" y="22" width="12" height="146"/>
+              <rect x="86" y="22" width="12" height="146"/>
+              <rect x="124" y="22" width="12" height="146"/>
+              <rect x="162" y="22" width="12" height="146"/>
+            </g>
+            <!-- 2" Gap Arrow -->
+            <line x1="60" y1="88" x2="86" y2="88" stroke="#dc2626" stroke-width="2"/>
+            <rect x="52" y="64" width="44" height="18" rx="4" fill="#fef2f2" stroke="#dc2626"/>
+            <text x="74" y="77" text-anchor="middle" font-size="10" font-weight="800" fill="#dc2626">2" MAX</text>
+
+            <!-- Height Levels on Right -->
+            <text x="220" y="34" font-size="11" font-weight="800" fill="#1c1917">Mattress Base Holes (from Floor):</text>
+            <circle cx="226" cy="64" r="5" fill="#059669"/>
+            <text x="238" y="68" font-size="11" font-weight="700" fill="#065f46">21" H — Newborn (2–5m) • Swing OK</text>
+            <circle cx="226" cy="100" r="5" fill="#d97706"/>
+            <text x="238" y="104" font-size="11" font-weight="700" fill="#92400e">15" H — Rolling (5–7m) • LOCK PIN IN</text>
+            <circle cx="226" cy="136" r="5" fill="#dc2626"/>
+            <text x="238" y="140" font-size="11" font-weight="700" fill="#991b1b">9" H — Standing (8–24m) • 24" Deep!</text>
+            <text x="220" y="168" font-size="10" font-weight="600" fill="#57534e">Top Rail is 37" from floor (24" above 4" mattress at 9" H)</text>
+          </svg>
+        </div>
+      </div>
+
+      <!-- SUB-TAB 3: SAFETY CHECKLIST -->
+      <div id="gview-safety" class="hidden space-y-3">
+        <div class="flex items-center justify-between bg-amber-50 border border-amber-200 rounded-xl p-3">
+          <span class="text-xs font-bold text-amber-950">Verify before putting baby inside:</span>
+          <span id="safety-score" class="text-xs font-extrabold text-amber-900 bg-white px-2.5 py-1 rounded-lg border border-amber-200">0 / 7 Done</span>
+        </div>
+        <div id="checklist-items" class="space-y-2"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // =========================================================================
+    // 1. CONSTANTS (EXACT INCHES -> 3D METERS) & APP STATE
+    // =========================================================================
+    const IN = 0.0254; // 1 inch = 0.0254 meters
+
+    const state = {
+      explode: 0,       // 0 to 1
+      swingOn: true,    // true = gentle pendulum swing (Lock Pin OUT), false = Locked (Pin IN)
+      stage: 1,         // 1: Newborn High (2-5m), 2: Standing Deep (6-24m), 3: Toddler Daybed
+      xray: false,
+      showDims: true,
+      swingPhase: 0
+    };
+
+    const PART_INFO = {
+      standPillar: { code: 'S1 (×2)', name: 'Outer Swing Stand Pillar', dims: '37" × 3.5" × 1.75"', note: 'Holds 6201 ball bearing at 34" H and safety lock pin hole at 10" H.' },
+      standFoot:   { code: 'S2 (×2)', name: 'Wide Anti-Tip Floor Base', dims: '34" × 2.5" × 1.75"', note: '2ft 10" wide footprint prevents tipping even if a toddler leans hard.' },
+      stretcher:   { code: 'S3 (×2)', name: 'Bottom Stand Stretchers', dims: '53.5" × 2" × 1.25"', note: 'Bolts Left & Right stands rigidly together using M8 Allen bolts.' },
+      bearing:     { code: 'PIVOT (×2)', name: '6201 Bearing + 12mm Steel Bolt', dims: 'At 34" Height', note: 'Silent, smooth pendulum swing. Use lock-nut so it never loosens.' },
+      lockPin:     { code: 'SAFETY PIN', name: '10mm Steel Swing Lock Pin', dims: 'At 10" Height', note: 'Slide IN to lock crib 100% rigid once baby starts rolling, sitting, or standing!' },
+      post:        { code: 'A (×4)', name: 'Inner Crib Corner Posts', dims: '30" × 1.5" × 1.5"', note: 'Round all edges smoothly. Drill 3 mattress-height holes (9", 15", 21" from floor).' },
+      longRail:    { code: 'B (×4)', name: 'Long Side Rails', dims: '48.25" × 1.5" × 1"', note: 'Bolts to Corner Posts with M6 Allen bolts + barrel nuts + wood dowels.' },
+      shortRail:   { code: 'C (×4)', name: 'Short End Rails + Center Pivot Post', dims: '24.25" × 1.5" × 1"', note: 'Glued & tenoned to Corner Posts. Center post (2.5" wide) takes the 12mm pivot bolt.' },
+      slat:        { code: 'D (×42)', name: 'Vertical Safety Slats', dims: '28" × 1" × 0.75"', note: 'CRITICAL: Clear gap between slats MUST be 2" MAX so baby cannot get stuck.' },
+      baseFrame:   { code: 'E (1 SET)', name: 'Ventilated Slatted Mattress Base', dims: '48" × 24" (10 Slats)', note: '10 wooden slats (2" wide) for airflow. Lowers to 9" H for 24" standing guard depth!' },
+      mattress:    { code: 'MATTRESS', name: 'Firm Baby Mattress', dims: '48" × 24" × 4" (4ft × 2ft)', note: 'Snug fit (<0.25" gap per side). Use firm coir/high-density foam + tight cotton sheet.' },
+      toddlerBar:  { code: 'F (×1)', name: 'Toddler Stabilizer Rail', dims: '48.25" × 1.5" × 1"', note: 'Replaces front panel after 18 months. Always keep Swing Lock Pin IN for toddler mode.' }
+    };
+
+    const SAFETY_ITEMS = [
+      { title: 'Swing Lock Pin Rule (Most Important!)', desc: 'Only unlock swing for 2–5 months. Once baby starts rolling, sitting, or standing, ALWAYS keep both Steel Lock Pins inserted.' },
+      { title: 'Strict 2-Inch Slat Gap Test', desc: 'Measure every vertical gap between slats. Must be ~2" (never over 2.25") so baby’s head or arms cannot get trapped.' },
+      { title: '24-Inch Standing Protection Depth', desc: 'In Stage 2 (Lowest base at 9" H), top of the 4" mattress is at 13" H, leaving a full 24" (2 ft) deep wall up to the 37" top rail.' },
+      { title: 'Snug 48" × 24" × 4" Mattress Fit', desc: 'Inner box is 48.25" × 24.25". You should NOT be able to fit more than 1–2 fingers between mattress and rails.' },
+      { title: '1.25" Pinch-Free Swing Clearance', desc: 'Ensure at least 1.25" clear gap between the swinging crib ends and outer stand pillars, plus rubber travel stoppers.' },
+      { title: 'Zero Sharp Edges & Splinters', desc: 'Rub a bare palm over every slat and post. All edges rounded and sanded to 320 grit.' },
+      { title: 'Baby-Safe Non-Toxic Finish', desc: 'Zero chemical smell. Use beeswax + mineral oil or cured water-based zero-VOC matte polish only.' }
+    ];
+
+    // =========================================================================
+    // 2. THREE.JS SCENE & MODEL BUILDER
+    // =========================================================================
+    let scene, camera, renderer;
+    let outerLeftStand, outerRightStand, stretcherGroup, lockPinLeft, lockPinRight;
+    let swingPivot, innerHead, innerFoot, innerBack, innerFront, toddlerBarGroup, baseGroup, mattressMesh;
+    let baseCornerBolts = [], cornerPostBolts = [];
+    let dimsGroup;
+    let woodMat, woodStandMat, slatMat, dowelMat, metalMat, steelMat, darkMetalMat, brassMat, pinMat, rubberMat, holeMat, mattressMat;
+    let interactiveMeshes = [], highlightedMeshes = [];
+    let raycaster, pointer;
+
+    // Exact structural dimensions (in inches) matching the 48" × 24" × 4" mattress
+    const INNER_L = 48.25;   // Inside length between corner posts
+    const INNER_W = 24.25;   // Inside width between corner posts
+    const INNER_H = 30.0;    // Inner crib box height
+    const POST_W = 1.5;      // Corner post thickness
+    const BOX_BOT_Y = 7.0;   // Floor clearance under crib box (top rail sits at 37" H)
+    const PIVOT_Y = 34.0;    // 6201 bearing swing pivot height from floor
+    const STAND_X = 27.75;   // Outer stand pillar centerline X (leaves 1.25" pinch-free gap)
+
+    // Smooth 3D orbit camera state (mouse + mobile touch)
+    const camOrbit = {
+      theta: Math.PI * 0.22,
+      desiredTheta: Math.PI * 0.22,
+      phi: Math.PI * 0.38,
+      desiredPhi: Math.PI * 0.38,
+      radius: 92 * IN,
+      desiredRadius: 92 * IN,
+      target: new THREE.Vector3(0, 19 * IN, 0),
+      desiredTarget: new THREE.Vector3(0, 19 * IN, 0),
+      isDragging: false,
+      dragMoved: false,
+      prevX: 0,
+      prevY: 0,
+      pinchDist: 0
+    };
+
+    /**
+     * Generates a procedural natural wood grain canvas texture (no external image URLs).
+     */
+    function createWoodTexture(baseHex, grainHex) {
+      const canvas = document.createElement('canvas');
+      canvas.width = 256;
+      canvas.height = 256;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = baseHex;
+      ctx.fillRect(0, 0, 256, 256);
+
+      ctx.strokeStyle = grainHex;
+      ctx.globalAlpha = 0.14;
+      for (let i = 0; i < 55; i++) {
+        ctx.beginPath();
+        const y = (i / 55) * 256;
+        ctx.lineWidth = 1 + (i % 3);
+        ctx.moveTo(0, y);
+        ctx.bezierCurveTo(85, y + Math.sin(i) * 5, 170, y - Math.cos(i) * 5, 256, y);
+        ctx.stroke();
+      }
+      ctx.globalAlpha = 1.0;
+
+      const tex = new THREE.CanvasTexture(canvas);
+      tex.wrapS = THREE.RepeatWrapping;
+      tex.wrapT = THREE.RepeatWrapping;
+      return tex;
+    }
+
+    function makePart(geo, mat, partKey) {
+      const mesh = new THREE.Mesh(geo, mat);
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      mesh.userData.partKey = partKey;
+      mesh.userData.origMat = mat;
+      interactiveMeshes.push(mesh);
+      return mesh;
+    }
+
+    /**
+     * Realistic Socket-Head M6/M8 Allen Bolt + Washer aligned along +X (head at x=0, shaft -> +X).
+     */
+    function createAllenBolt(lengthIn, radiusIn, partKey) {
+      const grp = new THREE.Group();
+      const headH = radiusIn * 1.45;
+      const headR = radiusIn * 1.75;
+
+      // Cylindrical cap head
+      const head = makePart(new THREE.CylinderGeometry(headR * IN, headR * IN, headH * IN, 16), steelMat, partKey);
+      head.rotation.z = Math.PI / 2;
+      head.position.x = -(headH / 2) * IN;
+      grp.add(head);
+
+      // Dark hex Allen socket recess
+      const hex = makePart(new THREE.CylinderGeometry(headR * 0.56 * IN, headR * 0.56 * IN, 0.08 * IN, 6), darkMetalMat, partKey);
+      hex.rotation.z = Math.PI / 2;
+      hex.position.x = -(headH + 0.01) * IN;
+      grp.add(hex);
+
+      // Flat steel washer under head
+      const washer = makePart(new THREE.CylinderGeometry(headR * 1.32 * IN, headR * 1.32 * IN, 0.07 * IN, 16), steelMat, partKey);
+      washer.rotation.z = Math.PI / 2;
+      washer.position.x = 0.035 * IN;
+      grp.add(washer);
+
+      // Threaded steel shaft
+      const shaft = makePart(new THREE.CylinderGeometry(radiusIn * IN, radiusIn * IN, lengthIn * IN, 12), metalMat, partKey);
+      shaft.rotation.z = Math.PI / 2;
+      shaft.position.x = (lengthIn / 2) * IN;
+      grp.add(shaft);
+
+      return grp;
+    }
+
+    /**
+     * Realistic Hex Bolt + Fender Washers + Lock Nut aligned along +X.
+     */
+    function createHexBoltAssembly(lengthIn, radiusIn, partKey) {
+      const grp = new THREE.Group();
+      const headH = radiusIn * 1.35;
+      const headR = radiusIn * 1.9;
+
+      // Hex head
+      const head = makePart(new THREE.CylinderGeometry(headR * IN, headR * IN, headH * IN, 6), steelMat, partKey);
+      head.rotation.z = Math.PI / 2;
+      head.position.x = -(headH / 2) * IN;
+      grp.add(head);
+
+      // Outer fender washer
+      const w1 = makePart(new THREE.CylinderGeometry(headR * 1.45 * IN, headR * 1.45 * IN, 0.08 * IN, 18), steelMat, partKey);
+      w1.rotation.z = Math.PI / 2;
+      w1.position.x = 0.04 * IN;
+      grp.add(w1);
+
+      // Shaft
+      const shaft = makePart(new THREE.CylinderGeometry(radiusIn * IN, radiusIn * IN, lengthIn * IN, 14), metalMat, partKey);
+      shaft.rotation.z = Math.PI / 2;
+      shaft.position.x = (lengthIn / 2) * IN;
+      grp.add(shaft);
+
+      // Inner washer + Nyloc hex nut
+      const w2 = makePart(new THREE.CylinderGeometry(headR * 1.35 * IN, headR * 1.35 * IN, 0.08 * IN, 18), steelMat, partKey);
+      w2.rotation.z = Math.PI / 2;
+      w2.position.x = (lengthIn - 0.35) * IN;
+      grp.add(w2);
+
+      const nut = makePart(new THREE.CylinderGeometry(headR * IN, headR * IN, headH * IN, 6), steelMat, partKey);
+      nut.rotation.z = Math.PI / 2;
+      nut.position.x = (lengthIn - 0.12) * IN;
+      grp.add(nut);
+
+      return grp;
+    }
+
+    /**
+     * Detailed 6201 Ball Bearing (outer race, dark dust shield, inner race) aligned along X.
+     */
+    function createBearing6201(partKey) {
+      const grp = new THREE.Group();
+      const outer = makePart(new THREE.CylinderGeometry(0.95 * IN, 0.95 * IN, 0.45 * IN, 22), steelMat, partKey);
+      outer.rotation.z = Math.PI / 2;
+      grp.add(outer);
+
+      const shield = makePart(new THREE.CylinderGeometry(0.76 * IN, 0.76 * IN, 0.48 * IN, 22), darkMetalMat, partKey);
+      shield.rotation.z = Math.PI / 2;
+      grp.add(shield);
+
+      const inner = makePart(new THREE.CylinderGeometry(0.46 * IN, 0.46 * IN, 0.52 * IN, 18), steelMat, partKey);
+      inner.rotation.z = Math.PI / 2;
+      grp.add(inner);
+
+      return grp;
+    }
+
+    /**
+     * Recessed Brass Threaded Insert Nut (M6/M8) + dark drilled bore on corner post inner face.
+     */
+    function createThreadedInsert(partKey) {
+      const grp = new THREE.Group();
+      const flange = makePart(new THREE.CylinderGeometry(0.28 * IN, 0.28 * IN, 0.06 * IN, 14), brassMat, partKey);
+      flange.rotation.z = Math.PI / 2;
+      grp.add(flange);
+
+      const body = makePart(new THREE.CylinderGeometry(0.21 * IN, 0.21 * IN, 0.48 * IN, 12), brassMat, partKey);
+      body.rotation.z = Math.PI / 2;
+      body.position.x = 0.24 * IN;
+      grp.add(body);
+
+      const bore = makePart(new THREE.CylinderGeometry(0.14 * IN, 0.14 * IN, 0.08 * IN, 12), holeMat, partKey);
+      bore.rotation.z = Math.PI / 2;
+      bore.position.x = -0.02 * IN;
+      grp.add(bore);
+
+      return grp;
+    }
+
+    /**
+     * Heavy-Duty Steel L-Hanger Bracket mounted to each corner of the adjustable mattress base.
+     * Supports the mattress frame from underneath and bolts horizontally into the corner post's threaded insert.
+     */
+    function createBaseCornerBracket(sx, sz) {
+      const grp = new THREE.Group();
+      const thick = 0.12 * IN;
+
+      // Vertical plate flush against outer X face of mattress frame & extending out to corner post centerline
+      const vertPlate = makePart(new THREE.BoxGeometry(thick, 1.55 * IN, 3.35 * IN), darkMetalMat, 'baseFrame');
+      vertPlate.position.set(sx * 24.06 * IN, -0.78 * IN, sz * 11.75 * IN);
+      grp.add(vertPlate);
+
+      // Horizontal bottom support cradle lip tucked directly under the mattress frame corner
+      const cradleLip = makePart(new THREE.BoxGeometry(2.1 * IN, thick, 2.2 * IN), darkMetalMat, 'baseFrame');
+      cradleLip.position.set(sx * 23.05 * IN, -1.56 * IN, sz * 11.15 * IN);
+      grp.add(cradleLip);
+
+      // 2 Vertical mounting bolt heads fastening the steel cradle to the wooden mattress frame
+      [-0.45, 0.45].forEach(offset => {
+        const screw = makePart(new THREE.CylinderGeometry(0.15 * IN, 0.15 * IN, 0.12 * IN, 10), steelMat, 'baseFrame');
+        screw.position.set(sx * (23.05 + offset) * IN, -1.66 * IN, sz * 11.15 * IN);
+        grp.add(screw);
+      });
+
+      // Side wood screws pinning vertical plate to mattress frame end rail
+      [-0.35, 0.35].forEach(yOff => {
+        const sHead = makePart(new THREE.CylinderGeometry(0.13 * IN, 0.13 * IN, 0.12 * IN, 10), steelMat, 'baseFrame');
+        sHead.rotation.z = Math.PI / 2;
+        sHead.position.set(sx * 24.13 * IN, (-0.78 + yOff) * IN, sz * 10.65 * IN);
+        grp.add(sHead);
+      });
+
+      // Horizontal M6 Allen Bolt + Washer passing through bracket tab into the corner post's brass insert
+      const mountBolt = createAllenBolt(1.15, 0.14, 'baseFrame');
+      if (sx < 0) mountBolt.rotation.y = Math.PI; // point outward into left corner post (-X)
+      const baseX = sx * 23.95 * IN;
+      mountBolt.position.set(baseX, -0.75 * IN, sz * 12.875 * IN);
+      mountBolt.userData.baseX = baseX;
+      mountBolt.userData.signX = sx;
+      baseCornerBolts.push(mountBolt);
+      grp.add(mountBolt);
+
+      return grp;
+    }
+
+    /**
+     * Draws a light, subtle 3D architectural dimension line + crisp transparent text sprite.
+     * Never blocks the crib!
+     */
+    function add3DDimension(parent, p1, p2, text, textOffset = new THREE.Vector3(0, 0, 0)) {
+      const lineMat = new THREE.LineBasicMaterial({ color: 0x78716c, transparent: true, opacity: 0.55 });
+      const pts = [p1, p2];
+      const lineGeo = new THREE.BufferGeometry().setFromPoints(pts);
+      parent.add(new THREE.Line(lineGeo, lineMat));
+
+      // Small end ticks
+      const dir = new THREE.Vector3().subVectors(p2, p1).normalize();
+      const perp = Math.abs(dir.y) > 0.9 ? new THREE.Vector3(1, 0, 0) : new THREE.Vector3(0, 1, 0);
+      const tickLen = 1.2 * IN;
+      [p1, p2].forEach(p => {
+        const tGeo = new THREE.BufferGeometry().setFromPoints([
+          p.clone().addScaledVector(perp, -tickLen),
+          p.clone().addScaledVector(perp, tickLen)
+        ]);
+        parent.add(new THREE.Line(tGeo, lineMat));
+      });
+
+      // Light, crisp sprite label
+      const canvas = document.createElement('canvas');
+      canvas.width = 320;
+      canvas.height = 72;
+      const ctx = canvas.getContext('2d');
+      ctx.font = '700 32px Inter, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      // Soft white halo for legibility without a heavy box
+      ctx.lineWidth = 7;
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.88)';
+      ctx.strokeText(text, 160, 36);
+      ctx.fillStyle = '#44403c';
+      ctx.fillText(text, 160, 36);
+
+      const tex = new THREE.CanvasTexture(canvas);
+      const spriteMat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false });
+      const sprite = new THREE.Sprite(spriteMat);
+      const mid = new THREE.Vector3().addVectors(p1, p2).multiplyScalar(0.5).add(textOffset);
+      sprite.position.copy(mid);
+      sprite.scale.set(16 * IN, 3.6 * IN, 1);
+      parent.add(sprite);
+    }
+
+    /**
+     * Builds the complete 3D Swinging & Lockable Crib model.
+     */
+    function buildModel() {
+      woodMat = new THREE.MeshStandardMaterial({
+        map: createWoodTexture('#ddb98c', '#8c5a2b'),
+        roughness: 0.52, metalness: 0.03, transparent: true, opacity: 1
+      });
+      woodStandMat = new THREE.MeshStandardMaterial({
+        map: createWoodTexture('#c89f6f', '#734720'),
+        roughness: 0.58, metalness: 0.03, transparent: true, opacity: 1
+      });
+      slatMat = new THREE.MeshStandardMaterial({
+        map: createWoodTexture('#e7c9a1', '#9c6a38'),
+        roughness: 0.48, metalness: 0.02, transparent: true, opacity: 1
+      });
+      dowelMat = new THREE.MeshStandardMaterial({ color: 0xb28252, roughness: 0.68, metalness: 0.02 });
+      metalMat = new THREE.MeshStandardMaterial({ color: 0x6b7280, roughness: 0.3, metalness: 0.85 });
+      steelMat = new THREE.MeshStandardMaterial({ color: 0xb4bcc8, roughness: 0.24, metalness: 0.9 });
+      darkMetalMat = new THREE.MeshStandardMaterial({ color: 0x333740, roughness: 0.42, metalness: 0.82 });
+      brassMat = new THREE.MeshStandardMaterial({ color: 0xd97706, roughness: 0.32, metalness: 0.82 });
+      pinMat = new THREE.MeshStandardMaterial({ color: 0xdc2626, roughness: 0.35, metalness: 0.4 });
+      rubberMat = new THREE.MeshStandardMaterial({ color: 0x1c1917, roughness: 0.92, metalness: 0.05 });
+      holeMat = new THREE.MeshStandardMaterial({ color: 0x2a1c12, roughness: 0.95, metalness: 0.0 });
+      mattressMat = new THREE.MeshStandardMaterial({ color: 0xfafaf9, roughness: 0.92, metalness: 0 });
+
+      // -----------------------------------------------------------------------
+      // 1. OUTER ANTI-TIP SWING STAND (Left, Right, Bottom Stretchers)
+      // -----------------------------------------------------------------------
+      outerLeftStand = buildOuterStand(-1);
+      outerRightStand = buildOuterStand(1);
+      scene.add(outerLeftStand, outerRightStand);
+
+      stretcherGroup = new THREE.Group();
+      [-1, 1].forEach(sz => {
+        const bar = makePart(new THREE.BoxGeometry(53.5 * IN, 2 * IN, 1.25 * IN), woodStandMat, 'stretcher');
+        bar.position.set(0, 2.5 * IN, sz * 12 * IN);
+        stretcherGroup.add(bar);
+
+        // Mortise tenon tongues + cross-dowel barrel nuts at both ends of stretchers
+        [-1, 1].forEach(sx => {
+          const tenon = makePart(new THREE.BoxGeometry(1.1 * IN, 1.2 * IN, 0.65 * IN), dowelMat, 'stretcher');
+          tenon.position.set(sx * 27.1 * IN, 2.5 * IN, sz * 12 * IN);
+          stretcherGroup.add(tenon);
+
+          const barrel = makePart(new THREE.CylinderGeometry(0.24 * IN, 0.24 * IN, 1.28 * IN, 12), brassMat, 'stretcher');
+          barrel.position.set(sx * 25.5 * IN, 2.5 * IN, sz * 12 * IN);
+          stretcherGroup.add(barrel);
+        });
+      });
+      scene.add(stretcherGroup);
+
+      // Safety Swing Lock Pins (Left & Right at 10" height)
+      lockPinLeft = buildLockPin(-1);
+      lockPinRight = buildLockPin(1);
+      scene.add(lockPinLeft, lockPinRight);
+
+      // -----------------------------------------------------------------------
+      // 2. INNER SWINGING CRIB BOX (Pivots cleanly at Y = 34")
+      // -----------------------------------------------------------------------
+      swingPivot = new THREE.Group();
+      swingPivot.position.set(0, PIVOT_Y * IN, 0);
+      scene.add(swingPivot);
+
+      const halfX = (INNER_L / 2 + POST_W / 2) * IN;
+      const halfZ = (INNER_W / 2 + POST_W / 2) * IN;
+      // Local Y coordinates relative to PIVOT_Y (34")
+      const boxBotLocal = (BOX_BOT_Y - PIVOT_Y) * IN;          // -27"
+      const boxTopLocal = (BOX_BOT_Y + INNER_H - PIVOT_Y) * IN; // +3"
+      const topRailY = boxTopLocal - 0.75 * IN;
+      const botRailY = boxBotLocal + 0.75 * IN;
+      const slatLen = (INNER_H - 2.0) * IN;
+      const slatCenterY = (topRailY + botRailY) / 2;
+
+      // Headboard & Footboard
+      innerHead = buildInnerEnd(-halfX, halfZ, topRailY, botRailY, slatLen, slatCenterY, -1);
+      innerFoot = buildInnerEnd(halfX, halfZ, topRailY, botRailY, slatLen, slatCenterY, 1);
+      swingPivot.add(innerHead, innerFoot);
+
+      // Back & Front Long Panels
+      innerBack = buildInnerLong(-halfZ, topRailY, botRailY, slatLen, slatCenterY);
+      innerFront = buildInnerLong(halfZ, topRailY, botRailY, slatLen, slatCenterY);
+      swingPivot.add(innerBack, innerFront);
+
+      // Stage 3 Toddler Stabilizer Bar (with alignment dowels + barrel nuts)
+      toddlerBarGroup = new THREE.Group();
+      const tBar = makePart(new THREE.BoxGeometry(INNER_L * IN, 1.5 * IN, 1.0 * IN), woodStandMat, 'toddlerBar');
+      tBar.position.set(0, botRailY, halfZ);
+      toddlerBarGroup.add(tBar);
+      [-1, 1].forEach(sx => {
+        const dowel = makePart(new THREE.CylinderGeometry(0.16 * IN, 0.16 * IN, 1.2 * IN, 10), dowelMat, 'toddlerBar');
+        dowel.rotation.z = Math.PI / 2;
+        dowel.position.set(sx * (INNER_L / 2 + 0.25) * IN, botRailY - 0.35 * IN, halfZ);
+        toddlerBarGroup.add(dowel);
+      });
+      toddlerBarGroup.visible = false;
+      swingPivot.add(toddlerBarGroup);
+
+      // Adjustable Slatted Mattress Base (48" × 24") with Inner Ledger Strips & 4 Steel L-Hanger Brackets
+      baseGroup = new THREE.Group();
+      swingPivot.add(baseGroup);
+
+      [-1, 1].forEach(sz => {
+        const e1 = makePart(new THREE.BoxGeometry(48 * IN, 1.5 * IN, 1 * IN), woodStandMat, 'baseFrame');
+        e1.position.set(0, -0.75 * IN, sz * 11.5 * IN);
+        baseGroup.add(e1);
+
+        // Inner wooden ledger cleat strip that physically carries the 10 airflow slats
+        const ledger = makePart(new THREE.BoxGeometry(46 * IN, 0.75 * IN, 0.75 * IN), dowelMat, 'baseFrame');
+        ledger.position.set(0, -1.125 * IN, sz * 10.625 * IN);
+        baseGroup.add(ledger);
+      });
+      [-1, 1].forEach(sx => {
+        const e2 = makePart(new THREE.BoxGeometry(1 * IN, 1.5 * IN, 22 * IN), woodStandMat, 'baseFrame');
+        e2.position.set(sx * 23.5 * IN, -0.75 * IN, 0);
+        baseGroup.add(e2);
+      });
+      for (let i = 0; i < 10; i++) {
+        const x = (-21.5 + (i / 9) * 43) * IN;
+        const slat = makePart(new THREE.BoxGeometry(2 * IN, 0.75 * IN, 22.0 * IN), slatMat, 'baseFrame');
+        slat.position.set(x, -0.375 * IN, 0);
+        baseGroup.add(slat);
+
+        // Countersunk brass wood screws fastening each slat to the inner ledger strip
+        [-1, 1].forEach(sz => {
+          const screw = makePart(new THREE.CylinderGeometry(0.11 * IN, 0.11 * IN, 0.06 * IN, 8), brassMat, 'baseFrame');
+          screw.position.set(x, 0.01 * IN, sz * 10.625 * IN);
+          baseGroup.add(screw);
+        });
+      }
+
+      // 4 Heavy-Duty Steel Corner Support Brackets + M6 Mounting Bolts (makes height adjustment real!)
+      [-1, 1].forEach(sx => {
+        [-1, 1].forEach(sz => {
+          baseGroup.add(createBaseCornerBracket(sx, sz));
+        });
+      });
+
+      // Firm 48" × 24" × 4" Mattress
+      mattressMesh = makePart(new THREE.BoxGeometry(48 * IN, 4 * IN, 24 * IN), mattressMat, 'mattress');
+      mattressMesh.position.set(0, 2 * IN, 0);
+      baseGroup.add(mattressMesh);
+
+      // -----------------------------------------------------------------------
+      // 3. LIGHT IN-MODEL 3D MEASUREMENTS (Feet & Inches)
+      // -----------------------------------------------------------------------
+      dimsGroup = new THREE.Group();
+      scene.add(dimsGroup);
+
+      const floorY = 0.2 * IN;
+      // Bed Length: 4 ft (48") along front floor
+      add3DDimension(
+        dimsGroup,
+        new THREE.Vector3(-24 * IN, floorY, 22 * IN),
+        new THREE.Vector3(24 * IN, floorY, 22 * IN),
+        'Bed: 4 ft (48")',
+        new THREE.Vector3(0, 0, 3.2 * IN)
+      );
+      // Bed Width: 2 ft (24") along right floor
+      add3DDimension(
+        dimsGroup,
+        new THREE.Vector3(34 * IN, floorY, -12 * IN),
+        new THREE.Vector3(34 * IN, floorY, 12 * IN),
+        'Bed: 2 ft (24")',
+        new THREE.Vector3(6.5 * IN, 0, 0)
+      );
+      // Total Height: 3 ft 2" (38") on left stand
+      add3DDimension(
+        dimsGroup,
+        new THREE.Vector3(-34 * IN, 0, -14 * IN),
+        new THREE.Vector3(-34 * IN, 37 * IN, -14 * IN),
+        '3 ft 1" (37" H)',
+        new THREE.Vector3(-7.5 * IN, 0, 0)
+      );
+      // Safe Slat Gap: 2" on front rail
+      add3DDimension(
+        dimsGroup,
+        new THREE.Vector3(-4.5 * IN, 28 * IN, 14.8 * IN),
+        new THREE.Vector3(-2.5 * IN, 28 * IN, 14.8 * IN),
+        '2" Safe Gap',
+        new THREE.Vector3(0, 3 * IN, 1.5 * IN)
+      );
+      // Mattress thickness: 4"
+      add3DDimension(
+        dimsGroup,
+        new THREE.Vector3(20 * IN, 21 * IN, 14.5 * IN),
+        new THREE.Vector3(20 * IN, 25 * IN, 14.5 * IN),
+        '4" Mattress',
+        new THREE.Vector3(6.5 * IN, 0, 1.5 * IN)
+      );
+    }
+
+    function buildOuterStand(sign) {
+      const grp = new THREE.Group();
+      const x = sign * STAND_X * IN;
+
+      // Central heavy vertical pillar (37" H × 3.5" W × 1.75" T)
+      const pillar = makePart(new THREE.BoxGeometry(1.75 * IN, 37 * IN, 3.5 * IN), woodStandMat, 'standPillar');
+      pillar.position.set(x, 18.5 * IN, 0);
+      grp.add(pillar);
+
+      // Wide anti-tip floor foot (34" long × 2.5" H × 1.75" T)
+      const foot = makePart(new THREE.BoxGeometry(1.75 * IN, 2.5 * IN, 34 * IN), woodStandMat, 'standFoot');
+      foot.position.set(x, 1.25 * IN, 0);
+      grp.add(foot);
+
+      // Mortise-and-tenon wooden pinning pegs locking pillar S1 into foot S2
+      [-0.85, 0.85].forEach(pz => {
+        const peg = makePart(new THREE.CylinderGeometry(0.2 * IN, 0.2 * IN, 1.82 * IN, 10), dowelMat, 'standFoot');
+        peg.rotation.z = Math.PI / 2;
+        peg.position.set(x, 1.25 * IN, pz * IN);
+        grp.add(peg);
+      });
+
+      // 2 Clean 45-degree corner braces + pinning pegs + rubber swing travel bumpers
+      [-1, 1].forEach(sz => {
+        const brace = makePart(new THREE.BoxGeometry(1.5 * IN, 1.5 * IN, 11 * IN), woodStandMat, 'standFoot');
+        brace.position.set(x, 5.5 * IN, sz * 5.2 * IN);
+        brace.rotation.x = sz * Math.PI * 0.25;
+        grp.add(brace);
+
+        // Pinning dowel on brace
+        const bPeg = makePart(new THREE.CylinderGeometry(0.16 * IN, 0.16 * IN, 1.58 * IN, 10), dowelMat, 'standFoot');
+        bPeg.rotation.z = Math.PI / 2;
+        bPeg.position.set(x, 7.6 * IN, sz * 2.9 * IN);
+        grp.add(bPeg);
+
+        // M8 Allen Bolt + Washer clamping bottom stretcher S3 to stand foot S2
+        const sBolt = createAllenBolt(3.4, 0.18, 'stretcher');
+        if (sign > 0) sBolt.rotation.y = Math.PI; // head on outside (+X), shaft going inward (-X)
+        sBolt.position.set(x + sign * 0.9 * IN, 2.5 * IN, sz * 12 * IN);
+        grp.add(sBolt);
+
+        // Rubber travel stoppers on lower pillar inner face to cushion extreme swing
+        const bumper = makePart(new THREE.CylinderGeometry(0.32 * IN, 0.36 * IN, 0.45 * IN, 12), rubberMat, 'standPillar');
+        bumper.rotation.z = Math.PI / 2;
+        bumper.position.set(x - sign * 1.05 * IN, 12.5 * IN, sz * 1.15 * IN);
+        grp.add(bumper);
+      });
+
+      // Flanged Steel Guide Bushing at 10" H for the 10mm Safety Lock Pin
+      const bushing = makePart(new THREE.CylinderGeometry(0.38 * IN, 0.38 * IN, 1.95 * IN, 14), steelMat, 'lockPin');
+      bushing.rotation.z = Math.PI / 2;
+      bushing.position.set(x, 10 * IN, 0);
+      grp.add(bushing);
+
+      const bushFlange = makePart(new THREE.CylinderGeometry(0.58 * IN, 0.58 * IN, 0.1 * IN, 14), steelMat, 'lockPin');
+      bushFlange.rotation.z = Math.PI / 2;
+      bushFlange.position.set(x + sign * 0.92 * IN, 10 * IN, 0);
+      grp.add(bushFlange);
+
+      // Detailed 6201 Ball Bearing recessed into inner face of stand pillar at 34" H
+      const bearing = createBearing6201('bearing');
+      bearing.position.set(x - sign * 0.72 * IN, PIVOT_Y * IN, 0);
+      grp.add(bearing);
+
+      // Brass/Steel Anti-Rub Spacer Collar in the 1.25" gap between bearing and crib end
+      const spacer = makePart(new THREE.CylinderGeometry(0.45 * IN, 0.45 * IN, 1.05 * IN, 14), brassMat, 'bearing');
+      spacer.rotation.z = Math.PI / 2;
+      spacer.position.set(x - sign * 1.48 * IN, PIVOT_Y * IN, 0);
+      grp.add(spacer);
+
+      // 12mm Steel Hex Pivot Bolt + Fender Washers + Inner Lock Nut
+      const pivotBolt = createHexBoltAssembly(4.65, 0.25, 'bearing');
+      if (sign > 0) pivotBolt.rotation.y = Math.PI;
+      pivotBolt.position.set(x + sign * 0.92 * IN, PIVOT_Y * IN, 0);
+      grp.add(pivotBolt);
+
+      return grp;
+    }
+
+    function buildLockPin(sign) {
+      const grp = new THREE.Group();
+      // Hardened 10mm steel locking shaft
+      const rod = makePart(new THREE.CylinderGeometry(0.21 * IN, 0.21 * IN, 4.3 * IN, 14), steelMat, 'lockPin');
+      rod.rotation.z = Math.PI / 2;
+      grp.add(rod);
+
+      // Machined stop collar
+      const collar = makePart(new THREE.CylinderGeometry(0.36 * IN, 0.36 * IN, 0.35 * IN, 14), darkMetalMat, 'lockPin');
+      collar.rotation.z = Math.PI / 2;
+      collar.position.x = sign * 1.55 * IN;
+      grp.add(collar);
+
+      // Red ergonomic pull-knob + cross-pin handle
+      const knob = makePart(new THREE.SphereGeometry(0.55 * IN, 16, 16), pinMat, 'lockPin');
+      knob.position.x = sign * 2.25 * IN;
+      grp.add(knob);
+
+      grp.position.set(sign * (STAND_X + 0.3) * IN, 10 * IN, 0);
+      return grp;
+    }
+
+    function buildInnerEnd(xPos, halfZ, topRailY, botRailY, slatLen, slatCenterY, sign) {
+      const grp = new THREE.Group();
+      const postCenterY = (topRailY + botRailY) / 2;
+
+      // 2 Corner Posts
+      [-halfZ, halfZ].forEach(zPos => {
+        const post = makePart(new THREE.BoxGeometry(POST_W * IN, INNER_H * IN, POST_W * IN), woodMat, 'post');
+        post.position.set(xPos, postCenterY, zPos);
+        grp.add(post);
+
+        // 3 Recessed Brass Threaded Inserts for Adjustable Mattress Heights (9", 15", 21" top-of-frame)
+        [9, 15, 21].forEach(hInch => {
+          const insert = createThreadedInsert('baseFrame');
+          if (sign < 0) insert.rotation.y = Math.PI; // face inward (+X on left post, -X on right post)
+          insert.position.set(xPos - sign * (POST_W / 2) * IN, (hInch - 0.75 - PIVOT_Y) * IN, zPos);
+          grp.add(insert);
+        });
+
+        // Knockdown Corner Rail Joints: M6 Allen Bolt + Washer on outer face & dowel bore holes on inner face
+        [topRailY, botRailY].forEach(ry => {
+          const kBolt = createAllenBolt(2.65, 0.14, 'longRail');
+          if (sign > 0) kBolt.rotation.y = Math.PI;
+          const boltBaseX = xPos + sign * (POST_W / 2 + 0.02) * IN;
+          kBolt.position.set(boltBaseX, ry + 0.22 * IN, zPos);
+          kBolt.userData.baseX = boltBaseX;
+          kBolt.userData.signX = sign;
+          cornerPostBolts.push(kBolt);
+          grp.add(kBolt);
+
+          // Dark alignment dowel socket on inner face of corner post
+          const dHole = makePart(new THREE.CylinderGeometry(0.16 * IN, 0.16 * IN, 0.08 * IN, 10), holeMat, 'post');
+          dHole.rotation.z = Math.PI / 2;
+          dHole.position.set(xPos - sign * (POST_W / 2 - 0.01) * IN, ry - 0.32 * IN, zPos);
+          grp.add(dHole);
+        });
+      });
+
+      // Top & Bottom Short Rails
+      [topRailY, botRailY].forEach(ry => {
+        const rail = makePart(new THREE.BoxGeometry(1.0 * IN, 1.5 * IN, INNER_W * IN), woodMat, 'shortRail');
+        rail.position.set(xPos, ry, 0);
+        grp.add(rail);
+      });
+
+      // Reinforced Center Vertical Post (receives the 12mm swing pivot bolt & bottom lock pin)
+      const centerPost = makePart(new THREE.BoxGeometry(1.5 * IN, INNER_H * IN, 2.5 * IN), woodStandMat, 'shortRail');
+      centerPost.position.set(xPos, postCenterY, 0);
+      grp.add(centerPost);
+
+      // Steel Receiver Bushing embedded in center post at 10" H for the Safety Lock Pin
+      const lockReceiver = makePart(new THREE.CylinderGeometry(0.36 * IN, 0.36 * IN, 1.58 * IN, 14), steelMat, 'lockPin');
+      lockReceiver.rotation.z = Math.PI / 2;
+      lockReceiver.position.set(xPos, (10 - PIVOT_Y) * IN, 0);
+      grp.add(lockReceiver);
+
+      const lockHole = makePart(new THREE.CylinderGeometry(0.23 * IN, 0.23 * IN, 1.62 * IN, 12), holeMat, 'lockPin');
+      lockHole.rotation.z = Math.PI / 2;
+      lockHole.position.set(xPos, (10 - PIVOT_Y) * IN, 0);
+      grp.add(lockHole);
+
+      // Steel Sleeve at 34" H in center post for the 12mm Pivot Bolt
+      const pivotSleeve = makePart(new THREE.CylinderGeometry(0.42 * IN, 0.42 * IN, 1.56 * IN, 14), steelMat, 'bearing');
+      pivotSleeve.rotation.z = Math.PI / 2;
+      pivotSleeve.position.set(xPos, 0, 0);
+      grp.add(pivotSleeve);
+
+      // 6 Vertical Slats (3 on each side of center post, ~2" clear gap) with glued mortise tenon rings
+      [-8.6, -5.6, -2.8, 2.8, 5.6, 8.6].forEach(zInch => {
+        const slat = makePart(new THREE.BoxGeometry(0.75 * IN, slatLen, 1.0 * IN), slatMat, 'slat');
+        slat.position.set(xPos, slatCenterY, zInch * IN);
+        grp.add(slat);
+      });
+
+      return grp;
+    }
+
+    function buildInnerLong(zPos, topRailY, botRailY, slatLen, slatCenterY) {
+      const grp = new THREE.Group();
+
+      // Top & Bottom Long Rails + Wooden Alignment Dowels + Brass Barrel Nuts (Cross Dowels)
+      [topRailY, botRailY].forEach(ry => {
+        const rail = makePart(new THREE.BoxGeometry(INNER_L * IN, 1.5 * IN, 1.0 * IN), woodMat, 'longRail');
+        rail.position.set(0, ry, zPos);
+        grp.add(rail);
+
+        [-1, 1].forEach(sx => {
+          const endX = sx * (INNER_L / 2) * IN;
+
+          // Fluted wooden alignment dowel protruding into corner post
+          const dowel = makePart(new THREE.CylinderGeometry(0.15 * IN, 0.15 * IN, 1.3 * IN, 10), dowelMat, 'longRail');
+          dowel.rotation.z = Math.PI / 2;
+          dowel.position.set(endX + sx * 0.25 * IN, ry - 0.32 * IN, zPos);
+          grp.add(dowel);
+
+          // Brass Barrel Nut (Cross-Dowel) recessed inside the rail to receive the M6 Allen bolt
+          const barrel = makePart(new THREE.CylinderGeometry(0.22 * IN, 0.22 * IN, 0.85 * IN, 12), brassMat, 'longRail');
+          barrel.position.set(endX - sx * 0.9 * IN, ry + 0.22 * IN, zPos);
+          grp.add(barrel);
+
+          // Cross-bore hole on underside of rail for inserting the barrel nut
+          const bHole = makePart(new THREE.CylinderGeometry(0.23 * IN, 0.23 * IN, 0.08 * IN, 12), holeMat, 'longRail');
+          bHole.position.set(endX - sx * 0.9 * IN, ry - 0.72 * IN, zPos);
+          grp.add(bHole);
+        });
+      });
+
+      // 15 Vertical Slats (strict ~2.01" clear gap)
+      const numSlats = 15;
+      const gap = (INNER_L - numSlats * 1.0) / (numSlats + 1);
+      for (let i = 0; i < numSlats; i++) {
+        const x = (-INNER_L / 2 + gap * (i + 1) + 1.0 * (i + 0.5)) * IN;
+        const slat = makePart(new THREE.BoxGeometry(1.0 * IN, slatLen, 0.75 * IN), slatMat, 'slat');
+        slat.position.set(x, slatCenterY, zPos);
+        grp.add(slat);
+      }
+
+      return grp;
+    }
+
+    function initThree() {
+      const container = document.getElementById('canvas-container');
+      scene = new THREE.Scene();
+
+      camera = new THREE.PerspectiveCamera(36, container.clientWidth / container.clientHeight, 0.05, 30);
+      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.setSize(container.clientWidth, container.clientHeight);
+      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+      container.appendChild(renderer.domElement);
+
+      // Soft Google-3D-Animals Studio Lighting
+      scene.add(new THREE.HemisphereLight(0xffffff, 0xe7e5e4, 0.95));
+
+      const keyLight = new THREE.DirectionalLight(0xfffbeb, 0.85);
+      keyLight.position.set(2.8, 4.5, 3.2);
+      keyLight.castShadow = true;
+      keyLight.shadow.mapSize.width = 1024;
+      keyLight.shadow.mapSize.height = 1024;
+      keyLight.shadow.camera.left = -2;
+      keyLight.shadow.camera.right = 2;
+      keyLight.shadow.camera.top = 2;
+      keyLight.shadow.camera.bottom = -2;
+      keyLight.shadow.bias = -0.001;
+      scene.add(keyLight);
+
+      const rimLight = new THREE.DirectionalLight(0xfef3c7, 0.3);
+      rimLight.position.set(-2.5, 2.0, -2.5);
+      scene.add(rimLight);
+
+      // Clean shadow-only floor (no noisy grid)
+      const floor = new THREE.Mesh(
+        new THREE.PlaneGeometry(10, 10),
+        new THREE.ShadowMaterial({ opacity: 0.13 })
+      );
+      floor.rotation.x = -Math.PI / 2;
+      floor.receiveShadow = true;
+      scene.add(floor);
+
+      buildModel();
+
+      raycaster = new THREE.Raycaster();
+      pointer = new THREE.Vector2();
+      bindEvents(renderer.domElement);
+      window.addEventListener('resize', onResize);
+    }
+
+    // =========================================================================
+    // 3. TOUCH & MOUSE CONTROLS
+    // =========================================================================
+    function bindEvents(dom) {
+      dom.addEventListener('mousedown', e => {
+        camOrbit.isDragging = true;
+        camOrbit.dragMoved = false;
+        camOrbit.prevX = e.clientX;
+        camOrbit.prevY = e.clientY;
+      });
+
+      window.addEventListener('mousemove', e => {
+        if (!camOrbit.isDragging) return;
+        const dx = e.clientX - camOrbit.prevX;
+        const dy = e.clientY - camOrbit.prevY;
+        if (Math.abs(dx) > 3 || Math.abs(dy) > 3) camOrbit.dragMoved = true;
+        camOrbit.desiredTheta -= dx * 0.008;
+        camOrbit.desiredPhi = Math.max(0.18, Math.min(Math.PI * 0.48, camOrbit.desiredPhi - dy * 0.008));
+        camOrbit.prevX = e.clientX;
+        camOrbit.prevY = e.clientY;
+      });
+
+      window.addEventListener('mouseup', () => { camOrbit.isDragging = false; });
+
+      dom.addEventListener('click', e => {
+        if (!camOrbit.dragMoved) handleTap(e.clientX, e.clientY);
+      });
+
+      dom.addEventListener('wheel', e => {
+        e.preventDefault();
+        camOrbit.desiredRadius = Math.max(38 * IN, Math.min(165 * IN, camOrbit.desiredRadius + e.deltaY * 0.002));
+      }, { passive: false });
+
+      // Smooth mobile 1-finger rotate & 2-finger pinch zoom
+      dom.addEventListener('touchstart', e => {
+        if (e.touches.length === 1) {
+          camOrbit.isDragging = true;
+          camOrbit.dragMoved = false;
+          camOrbit.prevX = e.touches[0].clientX;
+          camOrbit.prevY = e.touches[0].clientY;
+        } else if (e.touches.length === 2) {
+          camOrbit.isDragging = false;
+          camOrbit.pinchDist = Math.hypot(
+            e.touches[0].clientX - e.touches[1].clientX,
+            e.touches[0].clientY - e.touches[1].clientY
+          );
+        }
+      }, { passive: true });
+
+      dom.addEventListener('touchmove', e => {
+        if (e.touches.length === 1 && camOrbit.isDragging) {
+          const dx = e.touches[0].clientX - camOrbit.prevX;
+          const dy = e.touches[0].clientY - camOrbit.prevY;
+          if (Math.abs(dx) > 4 || Math.abs(dy) > 4) camOrbit.dragMoved = true;
+          camOrbit.desiredTheta -= dx * 0.009;
+          camOrbit.desiredPhi = Math.max(0.18, Math.min(Math.PI * 0.48, camOrbit.desiredPhi - dy * 0.009));
+          camOrbit.prevX = e.touches[0].clientX;
+          camOrbit.prevY = e.touches[0].clientY;
+        } else if (e.touches.length === 2) {
+          const dist = Math.hypot(
+            e.touches[0].clientX - e.touches[1].clientX,
+            e.touches[0].clientY - e.touches[1].clientY
+          );
+          const delta = camOrbit.pinchDist - dist;
+          camOrbit.desiredRadius = Math.max(38 * IN, Math.min(165 * IN, camOrbit.desiredRadius + delta * 0.006));
+          camOrbit.pinchDist = dist;
+        }
+      }, { passive: true });
+
+      dom.addEventListener('touchend', e => {
+        if (!camOrbit.dragMoved && e.changedTouches.length === 1) {
+          handleTap(e.changedTouches[0].clientX, e.changedTouches[0].clientY);
+        }
+        camOrbit.isDragging = false;
+      });
+    }
+
+    function handleTap(clientX, clientY) {
+      const rect = renderer.domElement.getBoundingClientRect();
+      pointer.x = ((clientX - rect.left) / rect.width) * 2 - 1;
+      pointer.y = -((clientY - rect.top) / rect.height) * 2 + 1;
+
+      raycaster.setFromCamera(pointer, camera);
+      const visible = interactiveMeshes.filter(m => {
+        let o = m;
+        while (o) { if (!o.visible) return false; o = o.parent; }
+        return true;
+      });
+      const hits = raycaster.intersectObjects(visible, false);
+
+      clearHighlight();
+      if (hits.length > 0) {
+        const key = hits[0].object.userData.partKey;
+        const info = PART_INFO[key];
+        if (info) {
+          const hlMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b, emissive: 0x92400e, emissiveIntensity: 0.25, roughness: 0.4 });
+          visible.forEach(m => {
+            if (m.userData.partKey === key) {
+              m.material = hlMat;
+              highlightedMeshes.push(m);
+            }
+          });
+          document.getElementById('toast-code').textContent = info.code;
+          document.getElementById('toast-dims').textContent = info.dims;
+          document.getElementById('toast-name').textContent = info.name;
+          document.getElementById('toast-note').textContent = info.note;
+          document.getElementById('part-toast').style.opacity = '1';
+        }
+      } else {
+        dismissToast();
+      }
+    }
+
+    function clearHighlight() {
+      highlightedMeshes.forEach(m => { m.material = m.userData.origMat; });
+      highlightedMeshes = [];
+    }
+
+    function dismissToast() {
+      clearHighlight();
+      document.getElementById('part-toast').style.opacity = '0';
+    }
+
+    function resetCamera() {
+      camOrbit.desiredTheta = Math.PI * 0.22;
+      camOrbit.desiredPhi = Math.PI * 0.38;
+      camOrbit.desiredRadius = window.innerWidth < 640 ? 112 * IN : 92 * IN;
+      camOrbit.desiredTarget.set(0, 19 * IN, 0);
+    }
+
+    function onResize() {
+      const c = document.getElementById('canvas-container');
+      camera.aspect = c.clientWidth / c.clientHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(c.clientWidth, c.clientHeight);
+    }
+
+    // =========================================================================
+    // 4. INTERACTIVE CONTROLS (EXPLODE, SWING, STAGE, XRAY, DIMS)
+    // =========================================================================
+    function setExplode(val) {
+      state.explode = parseFloat(val) / 100;
+      document.getElementById('explode-label').textContent =
+        val == 0 ? 'Slide to Inspect Joints (0%)' : `Disassembled (${val}%)`;
+      if (dimsGroup) dimsGroup.visible = state.showDims && state.explode < 0.15;
+    }
+
+    function toggleSwing() {
+      // Safety guardrail: if in Stage 2/3, show why swing stays locked or switch to Stage 1
+      if (state.stage !== 1 && !state.swingOn) {
+        state.stage = 1;
+        updateStageUI();
+      }
+      state.swingOn = !state.swingOn;
+      updateSwingUI();
+    }
+
+    function updateSwingUI() {
+      const btn = document.getElementById('btn-swing');
+      const icon = document.getElementById('icon-swing');
+      const txt = document.getElementById('txt-swing');
+      if (state.swingOn) {
+        btn.className = 'py-2 px-1.5 rounded-2xl bg-amber-600 text-white text-[11px] font-bold flex flex-col items-center justify-center gap-0.5 shadow-sm active:scale-95 transition';
+        icon.textContent = '〰️';
+        txt.textContent = 'Swing ON';
+      } else {
+        btn.className = 'py-2 px-1.5 rounded-2xl bg-red-50 border border-red-300 text-red-800 text-[11px] font-bold flex flex-col items-center justify-center gap-0.5 active:scale-95 transition';
+        icon.textContent = '🔒';
+        txt.textContent = 'Pin Locked';
+      }
+    }
+
+    function cycleStage() {
+      state.stage = (state.stage % 3) + 1;
+      // Automatically engage Safety Lock Pin for Stage 2 (Standing) & Stage 3 (Toddler)
+      state.swingOn = (state.stage === 1);
+      updateStageUI();
+      updateSwingUI();
+    }
+
+    function updateStageUI() {
+      const txt = document.getElementById('txt-stage');
+      if (state.stage === 1) txt.textContent = '2–5m High';
+      else if (state.stage === 2) txt.textContent = '6–24m Deep';
+      else txt.textContent = 'Toddler Bed';
+
+      if (innerFront && toddlerBarGroup) {
+        innerFront.visible = state.stage !== 3;
+        toddlerBarGroup.visible = state.stage === 3;
+      }
+    }
+
+    function toggleXray() {
+      state.xray = !state.xray;
+      const op = state.xray ? 0.3 : 1.0;
+      [woodMat, woodStandMat, slatMat].forEach(m => {
+        m.opacity = op;
+        m.depthWrite = !state.xray;
+      });
+      const btn = document.getElementById('btn-xray');
+      btn.className = state.xray
+        ? 'py-2 px-1.5 rounded-2xl bg-amber-50 border border-amber-300 text-amber-900 text-[11px] font-bold flex flex-col items-center justify-center gap-0.5 active:scale-95 transition'
+        : 'py-2 px-1.5 rounded-2xl bg-stone-100 text-stone-800 text-[11px] font-bold flex flex-col items-center justify-center gap-0.5 active:scale-95 transition';
+    }
+
+    function toggleDims() {
+      state.showDims = !state.showDims;
+      if (dimsGroup) dimsGroup.visible = state.showDims && state.explode < 0.15;
+      const btn = document.getElementById('btn-dims');
+      btn.className = state.showDims
+        ? 'py-2 px-1.5 rounded-2xl bg-amber-50 border border-amber-300 text-amber-900 text-[11px] font-bold flex flex-col items-center justify-center gap-0.5 active:scale-95 transition'
+        : 'py-2 px-1.5 rounded-2xl bg-stone-100 text-stone-800 text-[11px] font-bold flex flex-col items-center justify-center gap-0.5 active:scale-95 transition';
+    }
+
+    // =========================================================================
+    // 5. ANIMATION LOOP (SMOOTH SWING, LOCK PIN & EXPLODED VIEW)
+    // =========================================================================
+    function animate() {
+      requestAnimationFrame(animate);
+      const e = state.explode;
+
+      // 1. Gentle pendulum swing (only when Swing ON and not exploded)
+      if (state.swingOn && e < 0.05) {
+        state.swingPhase += 0.028;
+        const targetAngle = Math.sin(state.swingPhase) * 0.125; // Safe gentle ~7.2° arc
+        swingPivot.rotation.x += (targetAngle - swingPivot.rotation.x) * 0.12;
+      } else {
+        swingPivot.rotation.x += (0 - swingPivot.rotation.x) * 0.15;
+      }
+
+      // 2. Lock Pin position: IN when locked, pulled OUT when swinging, pushed further when exploded
+      const pinInX = (STAND_X - 1.0) * IN;
+      const pinOutX = (STAND_X + 2.4) * IN;
+      const targetPinX = (state.swingOn ? pinOutX : pinInX) + e * 14 * IN;
+      lockPinLeft.position.x += (-targetPinX - lockPinLeft.position.x) * 0.15;
+      lockPinRight.position.x += (targetPinX - lockPinRight.position.x) * 0.15;
+
+      // 3. Exploded View translations (Outer Stand separates wider than Inner Crib so bearings are visible!)
+      outerLeftStand.position.x += (-e * 18 * IN - outerLeftStand.position.x) * 0.12;
+      outerRightStand.position.x += (e * 18 * IN - outerRightStand.position.x) * 0.12;
+      stretcherGroup.position.y += (-e * 7 * IN - stretcherGroup.position.y) * 0.12;
+
+      innerHead.position.x += (-e * 9 * IN - innerHead.position.x) * 0.12;
+      innerFoot.position.x += (e * 9 * IN - innerFoot.position.x) * 0.12;
+      innerBack.position.z += (-e * 11 * IN - innerBack.position.z) * 0.12;
+      innerFront.position.z += (e * 11 * IN - innerFront.position.z) * 0.12;
+      toddlerBarGroup.position.z += (e * 11 * IN - toddlerBarGroup.position.z) * 0.12;
+
+      // Mattress base height (Stage 1 = 21" from floor, Stage 2/3 = 9" from floor)
+      const baseHeightInch = state.stage === 1 ? 21 : 9;
+      const targetBaseY = (baseHeightInch - PIVOT_Y) * IN + e * 8 * IN;
+      baseGroup.position.y += (targetBaseY - baseGroup.position.y) * 0.12;
+      mattressMesh.position.y += (2 * IN + e * 10 * IN - mattressMesh.position.y) * 0.12;
+
+      // Slide mounting bolts cleanly out of their threaded holes when exploded to show assembly order
+      baseCornerBolts.forEach(bolt => {
+        const targetX = bolt.userData.baseX - bolt.userData.signX * e * 2.2 * IN;
+        bolt.position.x += (targetX - bolt.position.x) * 0.14;
+      });
+      cornerPostBolts.forEach(bolt => {
+        const targetX = bolt.userData.baseX + bolt.userData.signX * e * 3.0 * IN;
+        bolt.position.x += (targetX - bolt.position.x) * 0.14;
+      });
+
+      // 4. Smooth Camera Orbit
+      camOrbit.theta += (camOrbit.desiredTheta - camOrbit.theta) * 0.12;
+      camOrbit.phi += (camOrbit.desiredPhi - camOrbit.phi) * 0.12;
+      camOrbit.radius += (camOrbit.desiredRadius - camOrbit.radius) * 0.12;
+      camOrbit.target.lerp(camOrbit.desiredTarget, 0.12);
+
+      camera.position.x = camOrbit.target.x + camOrbit.radius * Math.sin(camOrbit.phi) * Math.sin(camOrbit.theta);
+      camera.position.y = camOrbit.target.y + camOrbit.radius * Math.cos(camOrbit.phi);
+      camera.position.z = camOrbit.target.z + camOrbit.radius * Math.sin(camOrbit.phi) * Math.cos(camOrbit.theta);
+      camera.lookAt(camOrbit.target);
+
+      renderer.render(scene, camera);
+    }
+
+    // =========================================================================
+    // 6. CARPENTER GUIDE BOTTOM SHEET & CHECKLIST
+    // =========================================================================
+    function openGuide(tab) {
+      document.getElementById('guide-backdrop').classList.remove('hidden');
+      const sheet = document.getElementById('guide-sheet');
+      sheet.classList.remove('sheet-closed');
+      sheet.classList.add('sheet-open');
+      if (tab) switchGuideTab(tab);
+    }
+
+    function closeGuide() {
+      document.getElementById('guide-backdrop').classList.add('hidden');
+      const sheet = document.getElementById('guide-sheet');
+      sheet.classList.remove('sheet-open');
+      sheet.classList.add('sheet-closed');
+    }
+
+    function switchGuideTab(tab) {
+      ['cutlist', 'ikea', 'safety'].forEach(t => {
+        document.getElementById(`gview-${t}`).classList.toggle('hidden', t !== tab);
+        const btn = document.getElementById(`stab-${t}`);
+        btn.className = t === tab
+          ? 'flex-1 py-2 rounded-xl text-xs font-bold bg-stone-900 text-white transition'
+          : 'flex-1 py-2 rounded-xl text-xs font-bold bg-stone-100 text-stone-700 transition';
+      });
+    }
+
+    function renderChecklist() {
+      const box = document.getElementById('checklist-items');
+      box.innerHTML = '';
+      SAFETY_ITEMS.forEach((item, i) => {
+        const el = document.createElement('label');
+        el.className = 'flex items-start gap-3 p-3 rounded-xl border border-stone-200 bg-white cursor-pointer';
+        el.innerHTML = `
+          <input type="checkbox" onchange="updateSafetyScore()" class="safety-cb mt-0.5 w-4 h-4 accent-emerald-600" />
+          <div>
+            <p class="text-xs font-bold text-stone-900">${i + 1}. ${item.title}</p>
+            <p class="text-[11px] text-stone-600 mt-0.5 leading-snug">${item.desc}</p>
+          </div>`;
+        box.appendChild(el);
+      });
+    }
+
+    function updateSafetyScore() {
+      const cbs = document.querySelectorAll('.safety-cb');
+      const done = Array.from(cbs).filter(c => c.checked).length;
+      const badge = document.getElementById('safety-score');
+      badge.textContent = done === cbs.length ? '✅ All 7 Passed!' : `${done} / ${cbs.length} Done`;
+    }
+
+    function copyCutList() {
+      const text = `SAFE SWINGING BABY CRIB CUT LIST (48" x 24" x 4" Mattress)
+Wood: Seasoned Teak / Beech / Rubberwood (NO Plywood, NO PU/Melamine)
+Finish: Beeswax + Mineral Oil or Water-based Zero-VOC Matte
+
+OUTER SWING STAND (Anti-Tip):
+- S1. Stand Pillars x 2: 37" x 3.5" x 1.75" (Bearing hole at 34" H, Lock Pin at 10" H)
+- S2. Wide Floor Feet x 2: 34" x 2.5" x 1.75" (2ft 10" wide)
+- S3. Bottom Stretchers x 2: 53.5" x 2" x 1.25"
+
+INNER CRIB BOX (4ft x 2ft Mattress):
+- A. Corner Posts x 4: 30" x 1.5" x 1.5" (Height holes at 9", 15", 21" from floor)
+- B. Long Side Rails x 4: 48.25" x 1.5" x 1"
+- C. Short End Rails x 4: 24.25" x 1.5" x 1" (+ 2 center pivot posts 30" x 2.5" x 1.5")
+- D. Vertical Slats x 42: 28" x 1" x 0.75" (STRICT 2" MAX CLEAR GAP!)
+- E. Mattress Base Frame: 48" x 24" with 10 airflow slats (2" wide)
+- F. Toddler Front Bar x 1: 48.25" x 1.5" x 1"
+
+HARDWARE:
+- 2x 6201 Ball Bearings + 2x 12mm (1/2") SS Pivot Bolts + Lock Nuts
+- 2x 10mm Steel Swing Lock Pins (stops swing once baby rolls/stands)
+- 12x M6x70mm SS Allen Bolts + Barrel Nuts + 4x M8x75mm Bolts`;
+
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      document.body.appendChild(ta);
+      ta.select();
+      try {
+        document.execCommand('copy');
+        const toast = document.getElementById('copy-toast');
+        toast.classList.remove('hidden');
+        setTimeout(() => toast.classList.add('hidden'), 3000);
+      } catch (err) {
+        console.error('Copy failed', err);
+      }
+      document.body.removeChild(ta);
+    }
+
+    window.onload = function () {
+      initThree();
+      resetCamera();
+      renderChecklist();
+      animate();
+    };
+  </script>
+</body>
+</html>
